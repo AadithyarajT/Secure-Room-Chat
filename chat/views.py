@@ -576,14 +576,19 @@ def rooms_view(request):
     return render(request, "rooms.html", context)
 
 
+# In views.py - Update upload_once_view_media function and add new functions
+
+
 @csrf_exempt
 @require_POST
-def upload_once_view_media(request):
+def upload_media(request):
+    """Handle both normal and view-once media uploads"""
     if not request.session.session_key:
         request.session.create()
 
     file = request.FILES.get("file")
     room_id = request.POST.get("room_id")
+    media_type = request.POST.get("media_type", "once")  # New: once or normal
 
     if not file or not room_id:
         return JsonResponse({"error": "Missing file or room"}, status=400)
@@ -600,13 +605,33 @@ def upload_once_view_media(request):
         return JsonResponse({"error": "File too large (max 10MB)"}, status=400)
 
     ext = os.path.splitext(file.name)[1].lower()
-    allowed_extensions = [".jpg", ".jpeg", ".png", ".gif", ".mp4", ".mov"]
+    allowed_extensions = [
+        ".jpg",
+        ".jpeg",
+        ".png",
+        ".gif",
+        ".mp4",
+        ".mov",
+        ".webm",
+        ".webp",
+        ".avi",
+    ]
     if ext not in allowed_extensions:
         return JsonResponse({"error": "File type not allowed"}, status=400)
 
     username = request.user.username if request.user.is_authenticated else "Anonymous"
+
+    # Calculate expiry for view-once media
+    expires_at = None
+    if media_type == "once":
+        expires_at = timezone.now() + timedelta(hours=24)
+
     media = TemporaryMedia.objects.create(
-        file=file, uploader_username=username, room_id=room.id
+        file=file,
+        uploader_username=username,
+        room_id=room.id,
+        media_type=media_type,
+        expires_at=expires_at,
     )
 
     return JsonResponse(
@@ -614,7 +639,9 @@ def upload_once_view_media(request):
             "status": "ok",
             "media_id": str(media.id),
             "filename": file.name,
-            "is_image": ext in [".jpg", ".jpeg", ".png", ".gif"],
+            "is_image": ext in [".jpg", ".jpeg", ".png", ".gif", ".webp"],
+            "media_type": media_type,
+            "expires_at": expires_at.isoformat() if expires_at else None,
         }
     )
 
@@ -626,30 +653,46 @@ def get_media_for_view(request, media_id):
     try:
         media = get_object_or_404(TemporaryMedia, id=media_id)
 
+        # Check if media is expired (only for view-once)
+        if (
+            media.media_type == "once"
+            and media.expires_at
+            and timezone.now() > media.expires_at
+        ):
+            return JsonResponse(
+                {"status": "error", "message": "This media has expired."},
+                status=410,
+            )
+
         # Get username for logging
         username = (
             request.user.username if request.user.is_authenticated else "Anonymous"
         )
 
-        # Check if THIS user has already viewed this media
-        if request.user.is_authenticated:
-            has_viewed = media.has_user_viewed(user=request.user)
-        else:
-            # For anonymous users, use session key
-            if not request.session.session_key:
-                request.session.create()
-            has_viewed = media.has_user_viewed(session_key=request.session.session_key)
+        # Check if user has already viewed this media (only for view-once)
+        if media.media_type == "once":
+            if request.user.is_authenticated:
+                has_viewed = media.has_user_viewed(user=request.user)
+            else:
+                if not request.session.session_key:
+                    request.session.create()
+                has_viewed = media.has_user_viewed(
+                    session_key=request.session.session_key
+                )
 
-        if has_viewed:
-            return JsonResponse(
-                {"status": "error", "message": "You have already viewed this media."},
-                status=410,
-            )
+            if has_viewed:
+                return JsonResponse(
+                    {
+                        "status": "error",
+                        "message": "You have already viewed this media.",
+                    },
+                    status=410,
+                )
 
-        # Media can be viewed - return the view URL
-        view_url = f"/media/once/{media.id}/"
+        # Media can be viewed
+        view_url = f"/media/view/{media.id}/"
         filename = os.path.basename(media.file.name)
-        is_image = filename.lower().endswith((".jpg", ".jpeg", ".png", ".gif"))
+        is_image = filename.lower().endswith((".jpg", ".jpeg", ".png", ".gif", ".webp"))
 
         return JsonResponse(
             {
@@ -657,6 +700,8 @@ def get_media_for_view(request, media_id):
                 "view_url": view_url,
                 "filename": filename,
                 "is_image": is_image,
+                "media_type": media.media_type,
+                "can_view_multiple": media.media_type == "normal",
             }
         )
 
@@ -669,34 +714,48 @@ def get_media_for_view(request, media_id):
 
 
 @require_safe
-def view_once_media(request, media_id):
-    """Serve media file once per user"""
+def view_media(request, media_id):
+    """Serve media file with appropriate viewing rules"""
     try:
         media = get_object_or_404(TemporaryMedia, id=media_id)
+
+        # Check if media is expired (only for view-once)
+        if (
+            media.media_type == "once"
+            and media.expires_at
+            and timezone.now() > media.expires_at
+        ):
+            media.is_expired = True
+            media.save()
+            return HttpResponse("This media has expired.", status=410)
 
         # Get username
         username = (
             request.user.username if request.user.is_authenticated else "Anonymous"
         )
 
-        # Check if already viewed
-        if request.user.is_authenticated:
-            has_viewed = media.has_user_viewed(user=request.user)
-        else:
-            if not request.session.session_key:
-                request.session.create()
-            has_viewed = media.has_user_viewed(session_key=request.session.session_key)
+        # Check if already viewed (only for view-once)
+        if media.media_type == "once":
+            if request.user.is_authenticated:
+                has_viewed = media.has_user_viewed(user=request.user)
+            else:
+                if not request.session.session_key:
+                    request.session.create()
+                has_viewed = media.has_user_viewed(
+                    session_key=request.session.session_key
+                )
 
-        if has_viewed:
-            return HttpResponse("You have already viewed this media.", status=410)
+            if has_viewed:
+                return HttpResponse("You have already viewed this media.", status=410)
 
-        # Mark as viewed for this user/session
-        if request.user.is_authenticated:
-            media.mark_as_viewed_by_user(user=request.user, username=username)
-        else:
-            media.mark_as_viewed_by_user(
-                session_key=request.session.session_key, username=username
-            )
+        # Mark as viewed for view-once media
+        if media.media_type == "once":
+            if request.user.is_authenticated:
+                media.mark_as_viewed_by_user(user=request.user, username=username)
+            else:
+                media.mark_as_viewed_by_user(
+                    session_key=request.session.session_key, username=username
+                )
 
         # Serve the file
         content_type, _ = mimetypes.guess_type(media.file.name)
@@ -715,17 +774,51 @@ def view_once_media(request, media_id):
 
         filename = os.path.basename(media.file.name)
         response["Content-Disposition"] = f'inline; filename="{filename}"'
-        response["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
-        response["Pragma"] = "no-cache"
-        response["Expires"] = "0"
+
+        # Cache headers - normal media can be cached, view-once cannot
+        if media.media_type == "normal":
+            response["Cache-Control"] = "public, max-age=86400"  # 24 hours
+        else:
+            response["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+            response["Pragma"] = "no-cache"
+            response["Expires"] = "0"
 
         return response
 
     except TemporaryMedia.DoesNotExist:
         return HttpResponse("Media not found.", status=404)
     except Exception as e:
-        print(f"Error in view_once_media: {e}")
+        print(f"Error in view_media: {e}")
         return HttpResponse("Error loading media.", status=500)
+
+
+# Add this function for permanent media URLs
+@require_safe
+def get_permanent_media_url(request, media_id):
+    """Get a permanent URL for normal media"""
+    try:
+        media = get_object_or_404(TemporaryMedia, id=media_id, media_type="normal")
+
+        if not media.file:
+            return JsonResponse(
+                {"status": "error", "message": "Media file not found"}, status=404
+            )
+
+        return JsonResponse(
+            {
+                "status": "ok",
+                "url": media.file.url,
+                "filename": os.path.basename(media.file.name),
+                "is_image": media.file.name.lower().endswith(
+                    (".jpg", ".jpeg", ".png", ".gif", ".webp")
+                ),
+            }
+        )
+
+    except TemporaryMedia.DoesNotExist:
+        return JsonResponse(
+            {"status": "error", "message": "Media not found"}, status=404
+        )
 
 
 @login_required
@@ -1973,3 +2066,157 @@ def check_online_status(request):
             "timestamp": timezone.now().isoformat(),
         }
     )
+
+
+# chat/views.py - Add this cleanup view
+@login_required
+def cleanup_expired_media(request):
+    """Admin view to manually clean up expired media"""
+    if not request.user.is_staff:
+        return HttpResponse("Access denied", status=403)
+
+    expired_count = 0
+    from datetime import timedelta
+
+    # Find media that expired more than 24 hours ago
+    cutoff_time = timezone.now() - timedelta(hours=24)
+
+    expired_media = TemporaryMedia.objects.filter(
+        media_type="once", expires_at__lt=cutoff_time
+    )
+
+    expired_count = expired_media.count()
+
+    for media in expired_media:
+        if media.file:
+            try:
+                media.file.delete(save=False)
+            except:
+                pass
+        media.delete()
+
+    return JsonResponse(
+        {
+            "success": True,
+            "message": f"Cleaned up {expired_count} expired media files",
+            "count": expired_count,
+        }
+    )
+
+
+# In chat/views.py - Add this function for backward compatibility
+@csrf_exempt
+@require_POST
+def upload_once_view_media(request):
+    """Legacy endpoint for view-once media uploads (for backward compatibility)"""
+    if not request.session.session_key:
+        request.session.create()
+
+    file = request.FILES.get("file")
+    room_id = request.POST.get("room_id")
+
+    if not file or not room_id:
+        return JsonResponse({"error": "Missing file or room"}, status=400)
+
+    try:
+        room = Room.objects.get(id=room_id)
+        if room.is_closed:
+            return JsonResponse({"error": "Room is closed"}, status=410)
+    except Room.DoesNotExist:
+        return JsonResponse({"error": "Room not found"}, status=404)
+
+    MAX_SIZE = 10 * 1024 * 1024
+    if file.size > MAX_SIZE:
+        return JsonResponse({"error": "File too large (max 10MB)"}, status=400)
+
+    ext = os.path.splitext(file.name)[1].lower()
+    allowed_extensions = [".jpg", ".jpeg", ".png", ".gif", ".mp4", ".mov"]
+    if ext not in allowed_extensions:
+        return JsonResponse({"error": "File type not allowed"}, status=400)
+
+    username = request.user.username if request.user.is_authenticated else "Anonymous"
+
+    expires_at = timezone.now() + timedelta(hours=24)
+
+    media = TemporaryMedia.objects.create(
+        file=file,
+        uploader_username=username,
+        room_id=room.id,
+        media_type="once",  # Force view-once for legacy endpoint
+        expires_at=expires_at,
+    )
+
+    return JsonResponse(
+        {
+            "status": "ok",
+            "media_id": str(media.id),
+            "filename": file.name,
+            "is_image": ext in [".jpg", ".jpeg", ".png", ".gif"],
+            "media_type": "once",
+            "expires_at": expires_at.isoformat(),
+        }
+    )
+
+
+@require_safe
+def view_once_media(request, media_id):
+    """Legacy endpoint for view-once media (for backward compatibility)"""
+    try:
+        media = get_object_or_404(TemporaryMedia, id=media_id)
+
+        # Check if media is expired
+        if media.expires_at and timezone.now() > media.expires_at:
+            return HttpResponse("This media has expired.", status=410)
+
+        # Get username
+        username = (
+            request.user.username if request.user.is_authenticated else "Anonymous"
+        )
+
+        # Check if already viewed
+        if request.user.is_authenticated:
+            has_viewed = media.has_user_viewed(user=request.user)
+        else:
+            if not request.session.session_key:
+                request.session.create()
+            has_viewed = media.has_user_viewed(session_key=request.session.session_key)
+
+        if has_viewed:
+            return HttpResponse("You have already viewed this media.", status=410)
+
+        # Mark as viewed
+        if request.user.is_authenticated:
+            media.mark_as_viewed_by_user(user=request.user, username=username)
+        else:
+            media.mark_as_viewed_by_user(
+                session_key=request.session.session_key, username=username
+            )
+
+        # Serve the file
+        content_type, _ = mimetypes.guess_type(media.file.name)
+        if not content_type:
+            content_type = "application/octet-stream"
+
+        # Check if file exists
+        if not media.file:
+            return HttpResponse("Media file not found.", status=404)
+
+        try:
+            file_content = media.file.open("rb")
+            response = FileResponse(file_content, content_type=content_type)
+        except IOError:
+            return HttpResponse("Error opening media file.", status=500)
+
+        filename = os.path.basename(media.file.name)
+        response["Content-Disposition"] = f'inline; filename="{filename}"'
+        response["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        response["Pragma"] = "no-cache"
+        response["Expires"] = "0"
+
+        return response
+
+    except TemporaryMedia.DoesNotExist:
+        return HttpResponse("Media not found.", status=404)
+    except Exception as e:
+        print(f"Error in view_once_media: {e}")
+        return HttpResponse("Error loading media.", status=500)

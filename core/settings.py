@@ -1,13 +1,15 @@
 import os
 from pathlib import Path
 from django.contrib.messages import constants as messages
+from datetime import timedelta
+from celery.schedules import crontab 
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'your-secret-key-here'  # Change this!
+SECRET_KEY = "your-secret-key-here"  # Change this!
 DEBUG = True
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
 
 INSTALLED_APPS = [
     "daphne",  # For ASGI/WebSockets
@@ -33,7 +35,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-ROOT_URLCONF = 'core.urls'
+ROOT_URLCONF = "core.urls"
 
 # core/settings.py
 
@@ -54,38 +56,41 @@ TEMPLATES = [
     },
 ]
 # ASGI for WebSockets
-ASGI_APPLICATION = 'core.asgi.application'
+ASGI_APPLICATION = "core.asgi.application"
 
 # Database (PostgreSQL later – SQLite for now to test fast)
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'simplechat_db',  # Your DB name
-        'USER': 'simplechat_users',
-        'PASSWORD': 'chat123',
-        'HOST': 'localhost',
-        'PORT': '5432',
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": "simplechat_db",  # Your DB name
+        "USER": "simplechat_users",
+        "PASSWORD": "chat123",
+        "HOST": "localhost",
+        "PORT": "5432",
     }
 }
 # Channels (Redis for real-time)
 CHANNEL_LAYERS = {
-    'default': {
-        'BACKEND': 'channels_redis.core.RedisChannelLayer',
-        'CONFIG': {
-            "hosts": [('127.0.0.1', 6379)],
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)],
         },
     },
 }
+CHANNEL_LAYERS = {"default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}}
+
+
 
 # Static files
-STATIC_URL = '/static/'
-STATICFILES_DIRS = [BASE_DIR / 'static']  # Add this folder later
+STATIC_URL = "/static/"
+STATICFILES_DIRS = [BASE_DIR / "static"]  # Add this folder later
 
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 
-STATIC_ROOT = BASE_DIR / 'staticfiles'
-MEDIA_URL = '/media/'
+STATIC_ROOT = BASE_DIR / "staticfiles"
+MEDIA_URL = "/media/"
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 
 CORS_ALLOWED_ORIGINS = [
@@ -135,3 +140,18 @@ CSRF_TRUSTED_ORIGINS = [
     "http://127.0.0.1:8000",
     f"http://{COMPUTER_IP}:8000",  # Your computer's IP:8000
 ]
+
+CELERY_BROKER_URL = "redis://localhost:6379/1"  # Use different DB than chat
+CELERY_RESULT_BACKEND = "redis://localhost:6379/1"
+CELERY_ACCEPT_CONTENT = ["application/json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_TIMEZONE = "UTC"
+
+# In settings.py
+CELERY_BEAT_SCHEDULE = {
+    "cleanup-expired-media": {
+        "task": "chat.tasks.cleanup_expired_media",
+        "schedule": crontab(hour=3, minute=0),  # Daily at 3 AM
+    },
+}

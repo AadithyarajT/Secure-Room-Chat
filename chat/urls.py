@@ -22,6 +22,20 @@ urlpatterns = [
     path("upload-once/", views.upload_once_view_media, name="upload_once"),
     path("media/once/<uuid:media_id>/", views.view_once_media, name="view_once"),
     path("media/check/<uuid:media_id>/", views.get_media_for_view, name="check_media"),
+    path("upload-media/", views.upload_media, name="upload_media"),
+    path("media/view/<uuid:media_id>/", views.view_media, name="view_media"),
+    path("media/check/<uuid:media_id>/", views.get_media_for_view, name="check_media"),
+    path(
+        "media/permanent/<uuid:media_id>/",
+        views.get_permanent_media_url,
+        name="permanent_media",
+    ),
+    path("admin/cleanup-media/", views.cleanup_expired_media, name="cleanup_media"),
+    path(
+        "media/permanent/<uuid:media_id>/",
+        views.get_permanent_media_url,
+        name="permanent_media",
+    ),
     # Profile Views
     path("profile/", views.profile_view, name="profile"),
     path("profile/edit/", views.profile_edit, name="profile_edit"),

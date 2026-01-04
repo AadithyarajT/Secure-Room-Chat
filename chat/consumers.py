@@ -2,6 +2,7 @@
 import json
 import time
 import redis
+import uuid  
 from datetime import datetime
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
@@ -154,6 +155,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 "media_id",
                 "filename",
                 "is_image",
+                "media_type",  # Add this field
             )
         )
         return messages
@@ -591,7 +593,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
     # History (DB first, then Redis)
     # ------------------------------------------------------------------ #
     async def get_message_history(self, limit=500):
-        # 1. DB messages (persistent)
+    # 1. DB messages (persistent)
         db_msgs = await self.get_db_messages(limit)
 
         # Convert DB rows → same shape as Redis
@@ -609,19 +611,30 @@ class ChatConsumer(AsyncWebsocketConsumer):
             if row["is_deleted"]:
                 message_text = "[This message was deleted]"
 
+            # Convert UUID to string for JSON serialization
+            media_id = row["media_id"]
+            if media_id:
+                media_id = str(media_id)
+            
+            # Convert message_id to string if it's UUID
+            message_id = row["message_id"]
+            if isinstance(message_id, uuid.UUID):
+                message_id = str(message_id)
+
             history.append(
                 {
-                    "id": row["message_id"],
+                    "id": message_id,
                     "username": row["username"],
                     "message": message_text,
                     "timestamp": ts,
                     "reactions": {},  # reactions live only in Redis
                     "is_media": row["is_media"],
-                    "media_id": row["media_id"] or "",
+                    "media_id": media_id or "",
                     "filename": row["filename"] or "",
                     "is_image": row["is_image"],
                     "is_edited": row["is_edited"],
                     "is_deleted": row["is_deleted"],
+                    "media_type": row.get("media_type", "once"),  # Add media_type
                 }
             )
 
