@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Direct Messages - SimpleChat</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            text-align: center;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 2.2em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .header p {
+            margin: 10px 0 0;
+            opacity: 0.9;
+            font-size: 16px;
+        }
+
+        .navigation {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e9ecef;
+            padding: 0;
+        }
+
+        .nav-btn {
+            flex: 1;
+            padding: 18px;
+            text-align: center;
+            background: none;
+            border: none;
+            font-size: 16px;
+            font-weight: 500;
+            color: #6c757d;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .nav-btn:hover {
+            background: #e9ecef;
+            color: #495057;
+        }
+
+        .nav-btn.active {
+            color: #667eea;
+            background: white;
+        }
+
+        .nav-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: #667eea;
+            border-radius: 3px 3px 0 0;
+        }
+
+        .badge {
+            background: #dc3545;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            margin-left: 5px;
+        }
+
+        .content-area {
+            padding: 30px;
+            min-height: 500px;
+        }
+
+        .dm-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .dm-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            transition: all 0.3s;
+            border: 1px solid #e9ecef;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .dm-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            border-color: #667eea;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .dm-avatar {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 20px;
+            border: 3px solid white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .dm-info {
+            flex: 1;
+        }
+
+        .dm-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .dm-name {
+            font-weight: 600;
+            font-size: 18px;
+            color: #333;
+            margin: 0;
+        }
+
+        .dm-time {
+            font-size: 12px;
+            color: #6c757d;
+        }
+
+        .dm-message {
+            font-size: 14px;
+            color: #6c757d;
+            margin: 0 0 8px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .dm-status {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 14px;
+        }
+
+        .online-dot {
+            width: 10px;
+            height: 10px;
+            background: #28a745;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .offline-dot {
+            width: 10px;
+            height: 10px;
+            background: #6c757d;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+
+        .empty-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .empty-state h3 {
+            margin-bottom: 10px;
+            color: #495057;
+        }
+
+        .empty-state p {
+            margin-bottom: 25px;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+            text-decoration: none;
+            color: white;
+        }
+
+        .header-actions {
+            margin-top: 25px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn-action {
+            padding: 10px 20px;
+            border: 2px solid white;
+            background: transparent;
+            color: white;
+            border-radius: 25px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-action:hover {
+            background: white;
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        @media (max-width: 768px) {
+            .dm-list {
+                grid-template-columns: 1fr;
+            }
+            
+            .navigation {
+                flex-direction: column;
+            }
+            
+            .dm-card {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .dm-avatar {
+                margin-right: 0;
+                margin-bottom: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>💬 Direct Messages</h1>
+            <p>Private conversations with your friends</p>
+            <div class="header-actions">
+                <a href="/" class="btn-action">🏠 Home</a>
+                <a href="/rooms/" class="btn-action">💬 Rooms</a>
+                <a href="/friends/" class="btn-action">👥 Friends</a>
+                <a href="/notifications/" class="btn-action">
+                    🔔 Notifications
+                    {% if unread_notifications %}
+                    <span class="badge">{{ unread_notifications }}</span>
+                    {% endif %}
+                </a>
+            </div>
+        </div>
+        
+        <div class="navigation">
+            <button class="nav-btn active" onclick="switchTab('dm')">Direct Messages</button>
+            <button class="nav-btn" onclick="switchTab('friends')">Friends List</button>
+        </div>
+        
+        <div class="content-area">
+            {% if dm_rooms %}
+            <div class="dm-list">
+                {% for dm in dm_rooms %}
+                <a href="/chat/{{ dm.room.short_code or dm.room.id }}/" class="dm-card">
+                    <img src="/static/avatars/{{ dm.friend_profile.avatar }}" alt="{{ dm.friend.username }}" class="dm-avatar">
+                    <div class="dm-info">
+                        <div class="dm-header">
+                            <h3 class="dm-name">{{ dm.friend.username }}</h3>
+                            <span class="dm-time">{{ dm.last_accessed|date:"g:i A" }}</span>
+                        </div>
+                        {% if dm.last_message %}
+                        <p class="dm-message">{{ dm.last_message }}</p>
+                        {% else %}
+                        <p class="dm-message">No messages yet. Start a conversation!</p>
+                        {% endif %}
+                        <div class="dm-status">
+                            {% if dm.is_online %}
+                            <span class="online-dot"></span> Online now
+                            {% else %}
+                            <span class="offline-dot"></span> Offline
+                            {% endif %}
+                        </div>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">💬</div>
+                <h3>No direct messages yet</h3>
+                <p>You haven't started any direct message conversations. Start chatting with your friends!</p>
+                <a href="/friends/" class="btn-primary">Go to Friends</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        function switchTab(tab) {
+            // For now, just redirect to the appropriate page
+            if (tab === 'friends') {
+                window.location.href = '/friends/';
+            }
+            // DM tab is already active, do nothing
+        }
+        
+        // Auto-refresh page every 30 seconds to update online status
+        setTimeout(() => {
+            window.location.reload();
+        }, 30000);
+    </script>
+</body>
+</html>

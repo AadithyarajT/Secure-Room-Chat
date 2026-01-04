@@ -1,0 +1,1263 @@
+<!-- templates/profile_edit.html -->
+{% extends "base.html" %}
+
+{% block title %}Edit Profile - SimpleChat{% endblock %}
+
+{% block page_title %}Edit Profile{% endblock %}
+
+{% block extra_css %}
+<style>
+    .profile-edit-container {
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+    
+    .edit-card {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        overflow: hidden;
+        border: 1px solid #e9ecef;
+    }
+    
+    .edit-header {
+        background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+        color: white;
+        padding: 30px;
+        text-align: center;
+    }
+    
+    .edit-header h1 {
+        font-size: 32px;
+        margin-bottom: 10px;
+        font-weight: bold;
+    }
+    
+    .edit-header p {
+        opacity: 0.9;
+        font-size: 16px;
+    }
+    
+    .edit-content {
+        padding: 30px;
+    }
+    
+    .edit-tabs {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 30px;
+        border-bottom: 2px solid #e9ecef;
+        padding-bottom: 10px;
+        flex-wrap: wrap;
+    }
+    
+    .edit-tab {
+        padding: 12px 25px;
+        background: #f8f9fa;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        color: #6c757d;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .edit-tab:hover {
+        background: #e9ecef;
+        color: #495057;
+    }
+    
+    .edit-tab.active {
+        background: #4CAF50;
+        color: white;
+        box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+    }
+    
+    .tab-content {
+        display: none;
+        animation: fadeIn 0.5s ease;
+    }
+    
+    .tab-content.active {
+        display: block;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .form-section {
+        background: #f8f9fa;
+        padding: 30px;
+        border-radius: 12px;
+        border-left: 4px solid #4CAF50;
+        margin-bottom: 30px;
+    }
+    
+    .password-section {
+        border-left-color: #3498db;
+    }
+    
+    .section-title {
+        color: #2c3e50;
+        margin-bottom: 25px;
+        font-size: 22px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .form-group {
+        margin-bottom: 25px;
+    }
+    
+    .form-label {
+        display: block;
+        margin-bottom: 10px;
+        font-weight: 600;
+        color: #2c3e50;
+        font-size: 15px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .required {
+        color: #e74c3c;
+    }
+    
+    .form-control {
+        width: 100%;
+        padding: 14px 16px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 16px;
+        transition: all 0.3s;
+        background: white;
+    }
+    
+    .form-control:focus {
+        border-color: #4CAF50;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+    }
+    
+    .password-strength {
+        margin-top: 10px;
+        padding: 10px;
+        border-radius: 6px;
+        font-size: 14px;
+        display: none;
+    }
+    
+    .strength-weak {
+        background: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+    
+    .strength-medium {
+        background: #fff3cd;
+        color: #856404;
+        border: 1px solid #ffeaa7;
+    }
+    
+    .strength-strong {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+    
+    .strength-meter {
+        height: 6px;
+        border-radius: 3px;
+        background: #e0e0e0;
+        margin-top: 5px;
+        overflow: hidden;
+    }
+    
+    .strength-meter-fill {
+        height: 100%;
+        width: 0%;
+        transition: width 0.3s ease;
+    }
+    
+    .password-toggle {
+        position: absolute;
+        right: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        color: #6c757d;
+        cursor: pointer;
+        font-size: 18px;
+        padding: 5px;
+    }
+    
+    .password-input-group {
+        position: relative;
+    }
+    
+    .password-input-group .form-control {
+        padding-right: 50px;
+    }
+    
+    .char-counter {
+        color: #6c757d;
+        font-size: 14px;
+        margin-top: 8px;
+        text-align: right;
+    }
+    
+    .char-counter.warning {
+        color: #ff9800;
+    }
+    
+    .char-counter.error {
+        color: #e74c3c;
+        font-weight: bold;
+    }
+    
+    .avatar-preview {
+        text-align: center;
+        margin-bottom: 30px;
+        padding: 25px;
+        background: #e8f5e9;
+        border-radius: 12px;
+    }
+    
+    .current-avatar-img {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 4px solid #4CAF50;
+        margin-bottom: 15px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .avatar-fallback {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 36px;
+        font-weight: bold;
+        border: 4px solid white;
+        margin: 0 auto 15px auto;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .avatar-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+        gap: 20px;
+        margin-top: 20px;
+    }
+    
+    .avatar-option {
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s;
+        padding: 20px;
+        border-radius: 12px;
+        border: 3px solid transparent;
+        background: white;
+    }
+    
+    .avatar-option:hover {
+        background: #e8f5e9;
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .avatar-option.selected {
+        background: #e8f5e9;
+        border-color: #4CAF50;
+        box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
+        transform: translateY(-5px);
+    }
+    
+    .avatar-img {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        object-fit: cover;
+        margin-bottom: 12px;
+        border: 3px solid #ddd;
+        transition: all 0.3s;
+    }
+    
+    .avatar-option.selected .avatar-img {
+        border-color: #4CAF50;
+        transform: scale(1.1);
+    }
+    
+    .avatar-name {
+        font-size: 14px;
+        color: #495057;
+        font-weight: 600;
+    }
+    
+    .submit-btn {
+        background: #4CAF50;
+        color: white;
+        border: none;
+        padding: 16px 35px;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-top: 20px;
+    }
+    
+    .submit-btn:hover {
+        background: #45a049;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3);
+    }
+    
+    .submit-btn:active {
+        transform: translateY(0);
+    }
+    
+    .back-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        color: #4CAF50;
+        text-decoration: none;
+        font-weight: bold;
+        margin-top: 25px;
+        padding: 12px 24px;
+        border-radius: 6px;
+        transition: all 0.3s;
+        background: #f8f9fa;
+    }
+    
+    .back-btn:hover {
+        background: #e9ecef;
+        text-decoration: none;
+        transform: translateX(-5px);
+    }
+    
+    /* Success/Error Messages */
+    .alert-message {
+        padding: 15px 20px;
+        border-radius: 8px;
+        margin-bottom: 25px;
+        animation: slideDown 0.5s ease;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-weight: 600;
+    }
+    
+    .alert-success {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+    
+    .alert-error {
+        background: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+    
+    @keyframes slideDown {
+        from { opacity: 0; transform: translateY(-20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .password-requirements {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 15px;
+        margin-top: 15px;
+        border: 1px solid #e9ecef;
+    }
+    
+    .requirement-list {
+        list-style: none;
+        padding: 0;
+        margin: 10px 0 0 0;
+    }
+    
+    .requirement-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+        color: #6c757d;
+    }
+    
+    .requirement-item.valid {
+        color: #28a745;
+    }
+    
+    .requirement-item.invalid {
+        color: #dc3545;
+    }
+    
+    @media (max-width: 768px) {
+        .edit-content {
+            padding: 20px;
+        }
+        
+        .edit-tabs {
+            flex-direction: column;
+        }
+        
+        .avatar-grid {
+            grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+        }
+        
+        .form-section {
+            padding: 20px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="profile-edit-container">
+    <div class="edit-card">
+        <!-- Header -->
+        <div class="edit-header">
+            <h1>✏️ Edit Your Profile</h1>
+            <p>Customize how you appear to other users</p>
+        </div>
+        
+        <div class="edit-content">
+            <!-- Alert Messages -->
+            {% if profile_saved %}
+            <div class="alert-message alert-success">
+                <span style="font-size: 20px;">✅</span>
+                <span>Profile updated successfully!</span>
+            </div>
+            {% endif %}
+
+            {% if avatar_saved %}
+            <div class="alert-message alert-success">
+                <span style="font-size: 20px;">✅</span>
+                <span>Avatar changed successfully!</span>
+            </div>
+            {% endif %}
+
+            {% if avatar_error %}
+            <div class="alert-message alert-error">
+                <span style="font-size: 20px;">❌</span>
+                <span>Invalid avatar selection!</span>
+            </div>
+            {% endif %}
+
+            {% if password_saved %}
+            <div class="alert-message alert-success">
+                <span style="font-size: 20px;">✅</span>
+                <span>Password changed successfully!</span>
+            </div>
+            {% endif %}
+
+            {% if password_error %}
+            <div class="alert-message alert-error">
+                <span style="font-size: 20px;">❌</span>
+                <span>{{ password_error }}</span>
+            </div>
+            {% endif %}
+            
+            <!-- Tabs -->
+            <div class="edit-tabs">
+                <button class="edit-tab active" onclick="showTab('profile')">
+                    <span>👤</span>
+                    <span>Profile Info</span>
+                </button>
+                <button class="edit-tab" onclick="showTab('avatar')">
+                    <span>🖼️</span>
+                    <span>Change Avatar</span>
+                </button>
+                <button class="edit-tab" onclick="showTab('password')">
+                    <span>🔒</span>
+                    <span>Change Password</span>
+                </button>
+                <a href="{% url 'profile' %}" class="edit-tab" style="text-decoration: none;">
+                    <span>←</span>
+                    <span>Back to Profile</span>
+                </a>
+            </div>
+            
+            <!-- Tab 1: Profile Information -->
+            <div id="profile-tab" class="tab-content active">
+                <div class="form-section">
+                    <h3 class="section-title">📝 Profile Information</h3>
+                    <form method="post" id="profile-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="profile_edit">
+                        
+                        <div class="form-group">
+                            <label for="id_username" class="form-label">
+                                Display Name <span class="required">*</span>
+                            </label>
+                            <input type="text" 
+                                   name="username" 
+                                   id="id_username" 
+                                   class="form-control" 
+                                   value="{{ user.username }}"
+                                   maxlength="150"
+                                   required
+                                   autocomplete="username"
+                                   autofocus>
+                            <div class="char-counter" id="username-counter"></div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="id_description" class="form-label">
+                                Bio / Description
+                            </label>
+                            <textarea name="description" 
+                                      id="id_description" 
+                                      class="form-control" 
+                                      rows="5" 
+                                      maxlength="500"
+                                      placeholder="Tell others about yourself... (Optional)"
+                                      style="resize: vertical;">{{ profile.description|default:'' }}</textarea>
+                            <div class="char-counter" id="char-counter">
+                                {{ profile.description|length|default:0 }}/500 characters
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="submit-btn">
+                            <span>💾</span>
+                            Save Profile Changes
+                        </button>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Tab 2: Change Avatar -->
+            <div id="avatar-tab" class="tab-content">
+                <!-- Current Avatar Preview -->
+                <div class="avatar-preview">
+                    {% if profile.avatar %}
+                    <img src="/static/avatars/{{ profile.avatar }}" 
+                         class="current-avatar-img" 
+                         alt="Current Avatar"
+                         id="current-avatar-img"
+                         onerror="this.onerror=null; this.style.display='none'; document.getElementById('avatar-fallback').style.display='flex';">
+                    {% endif %}
+                    <div id="avatar-fallback" class="avatar-fallback" style="display: {% if not profile.avatar %}flex{% else %}none{% endif %};">
+                        {{ user.username|first|upper }}
+                    </div>
+                    <h3 style="color: #2c3e50; margin-bottom: 8px;">Your Current Avatar</h3>
+                    <p id="current-avatar-name" style="color: #6c757d;">
+                        {% if profile.avatar == "avt1.jpg" %}Cat
+                        {% elif profile.avatar == "avt2.jpg" %}Dog
+                        {% elif profile.avatar == "avt3.jpg" %}Robot
+                        {% elif profile.avatar == "avt4.jpg" %}Ghost
+                        {% elif profile.avatar == "avt5.jpg" %}Alien
+                        {% else %}Default{% endif %}
+                    </p>
+                </div>
+                
+                <!-- Avatar Selection -->
+                <div class="form-section">
+                    <h3 class="section-title">🖼️ Choose New Avatar</h3>
+                    <form method="post" id="avatar-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="change_avatar">
+                        
+                        <div class="avatar-grid" id="avatar-options">
+                            <!-- Avatar 1: Cat -->
+                            <div class="avatar-option {% if profile.avatar == 'avt1.jpg' %}selected{% endif %}" 
+                                 data-value="avt1.jpg" 
+                                 data-label="Cat">
+                                <img src="/static/avatars/avt1.jpg" 
+                                     class="avatar-img" 
+                                     alt="Cat Avatar"
+                                     onerror="this.src='/static/avatars/avt1.jpg'">
+                                <div class="avatar-name">Cat</div>
+                            </div>
+                            
+                            <!-- Avatar 2: Dog -->
+                            <div class="avatar-option {% if profile.avatar == 'avt2.jpg' %}selected{% endif %}" 
+                                 data-value="avt2.jpg" 
+                                 data-label="Dog">
+                                <img src="/static/avatars/avt2.jpg" 
+                                     class="avatar-img" 
+                                     alt="Dog Avatar"
+                                     onerror="this.src='/static/avatars/avt2.jpg'">
+                                <div class="avatar-name">Dog</div>
+                            </div>
+                            
+                            <!-- Avatar 3: Robot -->
+                            <div class="avatar-option {% if profile.avatar == 'avt3.jpg' %}selected{% endif %}" 
+                                 data-value="avt3.jpg" 
+                                 data-label="Robot">
+                                <img src="/static/avatars/avt3.jpg" 
+                                     class="avatar-img" 
+                                     alt="Robot Avatar"
+                                     onerror="this.src='/static/avatars/avt3.jpg'">
+                                <div class="avatar-name">Robot</div>
+                            </div>
+                            
+                            <!-- Avatar 4: Ghost -->
+                            <div class="avatar-option {% if profile.avatar == 'avt4.jpg' %}selected{% endif %}" 
+                                 data-value="avt4.jpg" 
+                                 data-label="Ghost">
+                                <img src="/static/avatars/avt4.jpg" 
+                                     class="avatar-img" 
+                                     alt="Ghost Avatar"
+                                     onerror="this.src='/static/avatars/avt4.jpg'">
+                                <div class="avatar-name">Ghost</div>
+                            </div>
+                            
+                            <!-- Avatar 5: Alien -->
+                            <div class="avatar-option {% if profile.avatar == 'avt5.jpg' %}selected{% endif %}" 
+                                 data-value="avt5.jpg" 
+                                 data-label="Alien">
+                                <img src="/static/avatars/avt5.jpg" 
+                                     class="avatar-img" 
+                                     alt="Alien Avatar"
+                                     onerror="this.src='/static/avatars/avt5.jpg'">
+                                <div class="avatar-name">Alien</div>
+                            </div>
+                        </div>
+                        
+                        <input type="hidden" name="avatar" id="selected-avatar" value="{{ profile.avatar }}">
+                        
+                        <button type="submit" class="submit-btn" id="save-avatar-btn">
+                            <span>🖼️</span>
+                            Save Avatar Selection
+                        </button>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Tab 3: Change Password -->
+            <div id="password-tab" class="tab-content">
+                <div class="form-section password-section">
+                    <h3 class="section-title">🔒 Change Password</h3>
+                    <form method="post" id="password-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="change_password">
+                        
+                        <div class="form-group">
+                            <label for="current_password" class="form-label">
+                                <span>🔐</span> Current Password <span class="required">*</span>
+                            </label>
+                            <div class="password-input-group">
+                                <input type="password" 
+                                       name="current_password" 
+                                       id="current_password" 
+                                       class="form-control" 
+                                       placeholder="Enter your current password"
+                                       required
+                                       autocomplete="current-password">
+                                <button type="button" class="password-toggle" onclick="togglePassword('current_password')">
+                                    👁️
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="new_password" class="form-label">
+                                <span>🆕</span> New Password <span class="required">*</span>
+                            </label>
+                            <div class="password-input-group">
+                                <input type="password" 
+                                       name="new_password" 
+                                       id="new_password" 
+                                       class="form-control" 
+                                       placeholder="Enter new password"
+                                       required
+                                       autocomplete="new-password"
+                                       oninput="checkPasswordStrength()">
+                                <button type="button" class="password-toggle" onclick="togglePassword('new_password')">
+                                    👁️
+                                </button>
+                            </div>
+                            <div id="password-strength" class="password-strength">
+                                <div id="strength-text"></div>
+                                <div class="strength-meter">
+                                    <div id="strength-meter-fill" class="strength-meter-fill"></div>
+                                </div>
+                            </div>
+                            
+    
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="confirm_password" class="form-label">
+                                <span>✅</span> Confirm New Password <span class="required">*</span>
+                            </label>
+                            <div class="password-input-group">
+                                <input type="password" 
+                                       name="confirm_password" 
+                                       id="confirm_password" 
+                                       class="form-control" 
+                                       placeholder="Confirm new password"
+                                       required
+                                       autocomplete="new-password"
+                                       oninput="checkPasswordMatch()">
+                                <button type="button" class="password-toggle" onclick="togglePassword('confirm_password')">
+                                    👁️
+                                </button>
+                            </div>
+                            <div id="password-match" style="margin-top: 10px; display: none;">
+                                <span id="match-icon">❌</span>
+                                <span id="match-text">Passwords do not match</span>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group" style="margin-top: 30px;">
+                            <button type="button" class="random-name-btn" onclick="generateSecurePassword()" style="font-size: 14px;">
+                                🔐 Generate Secure Password
+                            </button>
+                        </div>
+                        
+                        <button type="submit" class="submit-btn" style="background: #3498db;">
+                            <span>🔒</span>
+                            Change Password
+                        </button>
+                    </form>
+                </div>
+                
+                <div class="form-section" style="background: #fff3cd; border-left-color: #ffc107;">
+                    <h3 class="section-title">⚠️ Security Notice</h3>
+                    <div style="color: #856404;">
+                        <p><strong>Important:</strong></p>
+                        <ul style="padding-left: 20px; margin-top: 10px;">
+                            <li>Changing your password will log you out of all other devices</li>
+                            <li>Use a strong, unique password that you don't use elsewhere</li>
+                            <li>Consider using a password manager to store your passwords securely</li>
+                            <li>Never share your password with anyone</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Navigation -->
+            <div style="margin-top: 30px; padding-top: 25px; border-top: 1px solid #e9ecef;">
+                <a href="{% url 'profile' %}" class="back-btn">
+                    <span>←</span>
+                    <span>Back to Profile</span>
+                </a>
+                <a href="/" class="back-btn" style="margin-left: 15px;">
+                    <span>🏠</span>
+                    <span>Back to Home</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Tab navigation
+    function showTab(tabName) {
+        // Hide all tabs
+        document.querySelectorAll('.tab-content').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        
+        // Remove active class from all tab buttons
+        document.querySelectorAll('.edit-tab').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        
+        // Show selected tab
+        document.getElementById(tabName + '-tab').classList.add('active');
+        
+        // Activate selected tab button
+        event.currentTarget.classList.add('active');
+        
+        // Save active tab in localStorage
+        localStorage.setItem('activeProfileEditTab', tabName);
+    }
+    
+    // Restore active tab from localStorage
+    document.addEventListener('DOMContentLoaded', function() {
+        const savedTab = localStorage.getItem('activeProfileEditTab') || 'profile';
+        const tabButtons = document.querySelectorAll('.edit-tab');
+        
+        tabButtons.forEach(tab => {
+            if (tab.getAttribute('onclick') && tab.getAttribute('onclick').includes(savedTab)) {
+                tab.click();
+            }
+        });
+        
+        // Initialize character counter
+        initCharCounter();
+        
+        // Initialize avatar selection
+        initAvatarSelection();
+        
+        // Initialize password validation
+        initPasswordValidation();
+        
+        // Auto-hide alert messages after 5 seconds
+        setTimeout(() => {
+            const alerts = document.querySelectorAll('.alert-message');
+            alerts.forEach(alert => {
+                alert.style.transition = 'opacity 0.5s';
+                alert.style.opacity = '0';
+                setTimeout(() => alert.remove(), 500);
+            });
+        }, 5000);
+    });
+    
+    // Avatar selection
+    function initAvatarSelection() {
+        const avatarOptions = document.querySelectorAll('.avatar-option');
+        const selectedAvatarInput = document.getElementById('selected-avatar');
+        const saveAvatarBtn = document.getElementById('save-avatar-btn');
+        
+        avatarOptions.forEach(option => {
+            option.addEventListener('click', function() {
+                // Remove selected class from all avatars
+                avatarOptions.forEach(avatar => {
+                    avatar.classList.remove('selected');
+                });
+                
+                // Add selected class to clicked avatar
+                this.classList.add('selected');
+                
+                // Get selected values
+                const avatarValue = this.getAttribute('data-value');
+                const avatarLabel = this.getAttribute('data-label');
+                
+                // Update hidden input
+                selectedAvatarInput.value = avatarValue;
+                
+                // Update preview
+                const avatarImg = document.getElementById('current-avatar-img');
+                if (avatarImg) {
+                    avatarImg.src = `/static/avatars/${avatarValue}`;
+                    avatarImg.style.display = 'block';
+                    document.getElementById('avatar-fallback').style.display = 'none';
+                }
+                
+                document.getElementById('current-avatar-name').textContent = avatarLabel;
+                
+                // Update button text
+                if (saveAvatarBtn) {
+                    saveAvatarBtn.innerHTML = '<span>🖼️</span> Save as: ' + avatarLabel;
+                    saveAvatarBtn.style.background = '#3498db';
+                }
+            });
+        });
+        
+        // Initialize with current avatar
+        const currentAvatar = selectedAvatarInput.value;
+        if (currentAvatar) {
+            avatarOptions.forEach(option => {
+                if (option.getAttribute('data-value') === currentAvatar) {
+                    option.classList.add('selected');
+                }
+            });
+        }
+    }
+    
+    // Character counter for description
+    function initCharCounter() {
+        const descriptionField = document.getElementById('id_description');
+        const charCounter = document.getElementById('char-counter');
+        const usernameField = document.getElementById('id_username');
+        const usernameCounter = document.getElementById('username-counter');
+        
+        if (descriptionField && charCounter) {
+            descriptionField.addEventListener('input', function() {
+                const maxLength = 500;
+                const currentLength = this.value.length;
+                charCounter.textContent = `${currentLength}/${maxLength} characters`;
+                
+                // Update styling based on length
+                charCounter.className = 'char-counter';
+                if (currentLength > maxLength - 50) {
+                    charCounter.classList.add('warning');
+                }
+                if (currentLength > maxLength) {
+                    charCounter.classList.add('error');
+                    // Trim if exceeds limit
+                    this.value = this.value.substring(0, maxLength);
+                    charCounter.textContent = `${maxLength}/${maxLength} characters`;
+                }
+            });
+            
+            // Trigger initial count
+            descriptionField.dispatchEvent(new Event('input'));
+        }
+        
+        if (usernameField && usernameCounter) {
+            usernameField.addEventListener('input', function() {
+                const currentLength = this.value.length;
+                const minLength = 3;
+                const maxLength = 150;
+                
+                if (currentLength < minLength) {
+                    usernameCounter.textContent = `Minimum ${minLength} characters required`;
+                    usernameCounter.className = 'char-counter error';
+                } else if (currentLength > maxLength) {
+                    usernameCounter.textContent = `Maximum ${maxLength} characters`;
+                    usernameCounter.className = 'char-counter error';
+                    this.value = this.value.substring(0, maxLength);
+                } else {
+                    usernameCounter.textContent = `${currentLength}/${maxLength} characters`;
+                    usernameCounter.className = 'char-counter';
+                }
+            });
+            
+            // Trigger initial count
+            usernameField.dispatchEvent(new Event('input'));
+        }
+    }
+    
+    // Password functionality
+    function initPasswordValidation() {
+        const newPasswordField = document.getElementById('new_password');
+        const confirmPasswordField = document.getElementById('confirm_password');
+        
+        if (newPasswordField) {
+            newPasswordField.addEventListener('input', checkPasswordStrength);
+            newPasswordField.addEventListener('focus', function() {
+                document.getElementById('password-strength').style.display = 'block';
+            });
+            newPasswordField.addEventListener('blur', function() {
+                if (!this.value) {
+                    document.getElementById('password-strength').style.display = 'none';
+                }
+            });
+        }
+        
+        if (confirmPasswordField) {
+            confirmPasswordField.addEventListener('input', checkPasswordMatch);
+        }
+    }
+    
+    // Toggle password visibility
+    function togglePassword(fieldId) {
+        const field = document.getElementById(fieldId);
+        const toggleBtn = field.nextElementSibling;
+        
+        if (field.type === 'password') {
+            field.type = 'text';
+            toggleBtn.textContent = '👁️‍🗨️';
+        } else {
+            field.type = 'password';
+            toggleBtn.textContent = '👁️';
+        }
+    }
+    
+    // Check password strength
+    // Check password strength with reduced requirements
+    function checkPasswordStrength() {
+        const password = document.getElementById('new_password').value;
+        const strengthDiv = document.getElementById('password-strength');
+        const strengthText = document.getElementById('strength-text');
+        const strengthFill = document.getElementById('strength-meter-fill');
+        
+        // Updated requirements (no special character needed)
+        const hasLength = password.length >= 6;
+        const hasLetter = /[a-zA-Z]/.test(password);
+        const hasNumber = /\d/.test(password);
+        
+        // Update requirement indicators
+        updateRequirement('req-length', hasLength);
+        updateRequirement('req-uppercase', /[A-Z]/.test(password)); // Optional, just for info
+        updateRequirement('req-lowercase', /[a-z]/.test(password)); // Optional, just for info
+        updateRequirement('req-number', hasNumber);
+        // Hide special character requirement or make it optional
+        document.getElementById('req-special').style.display = 'none';
+        
+        // Calculate strength score (0-3 now instead of 0-5)
+        let score = 0;
+        if (hasLength) score++;
+        if (hasLetter) score++;
+        if (hasNumber) score++;
+        
+        // Determine strength level
+        let strength = 'weak';
+        let strengthColor = '#e74c3c';
+        let fillPercent = (score / 3) * 100;
+        
+        if (score >= 3) {
+            strength = 'strong';
+            strengthColor = '#28a745';
+        } else if (score >= 2) {
+            strength = 'medium';
+            strengthColor = '#ffc107';
+        }
+        
+        // Update display
+        strengthDiv.className = `password-strength strength-${strength}`;
+        strengthText.textContent = `Password strength: ${strength.charAt(0).toUpperCase() + strength.slice(1)}`;
+        strengthFill.style.width = `${fillPercent}%`;
+        strengthFill.style.background = strengthColor;
+    }
+        
+    function updateRequirement(elementId, isValid) {
+        const element = document.getElementById(elementId);
+        element.className = `requirement-item ${isValid ? 'valid' : 'invalid'}`;
+    }
+    
+    // Check password match
+    function checkPasswordMatch() {
+        const newPassword = document.getElementById('new_password').value;
+        const confirmPassword = document.getElementById('confirm_password').value;
+        const matchDiv = document.getElementById('password-match');
+        const matchIcon = document.getElementById('match-icon');
+        const matchText = document.getElementById('match-text');
+        
+        if (!newPassword || !confirmPassword) {
+            matchDiv.style.display = 'none';
+            return;
+        }
+        
+        const isMatch = newPassword === confirmPassword;
+        
+        matchDiv.style.display = 'block';
+        if (isMatch) {
+            matchIcon.textContent = '✅';
+            matchText.textContent = 'Passwords match';
+            matchDiv.style.color = '#28a745';
+        } else {
+            matchIcon.textContent = '❌';
+            matchText.textContent = 'Passwords do not match';
+            matchDiv.style.color = '#e74c3c';
+        }
+    }
+    
+    // Generate secure password
+    // Generate secure password (without special characters)
+    function generateSecurePassword() {
+        const letters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        const numbers = '0123456789';
+        const allChars = letters + numbers;
+        
+        let password = '';
+        
+        // Ensure at least one letter
+        password += letters[Math.floor(Math.random() * letters.length)];
+        // Ensure at least one number
+        password += numbers[Math.floor(Math.random() * numbers.length)];
+        
+        // Fill the rest randomly (total length 10)
+        for (let i = 2; i < 10; i++) {
+            password += allChars[Math.floor(Math.random() * allChars.length)];
+        }
+        
+        // Shuffle the password
+        password = password.split('').sort(() => Math.random() - 0.5).join('');
+        
+        // Set the password fields
+        document.getElementById('new_password').value = password;
+        document.getElementById('confirm_password').value = password;
+        
+        // Trigger validation
+        checkPasswordStrength();
+        checkPasswordMatch();
+        
+        // Show notification
+        showToast('Secure password generated!', 'success');
+        
+        // Focus on confirm field
+        document.getElementById('confirm_password').focus();
+    }
+        
+    // Form validation
+    document.getElementById('profile-form').addEventListener('submit', function(e) {
+        const username = document.getElementById('id_username').value.trim();
+        
+        if (!username) {
+            e.preventDefault();
+            showToast('Please enter a display name', 'error');
+            return false;
+        }
+        
+        if (username.length < 3) {
+            e.preventDefault();
+            showToast('Display name must be at least 3 characters', 'error');
+            return false;
+        }
+        
+        return true;
+    });
+    
+    document.getElementById('avatar-form').addEventListener('submit', function(e) {
+        const selectedAvatar = document.getElementById('selected-avatar').value;
+        if (!selectedAvatar) {
+            e.preventDefault();
+            showToast('Please select an avatar first', 'error');
+            return false;
+        }
+        return true;
+    });
+    
+        document.getElementById('password-form').addEventListener('submit', function(e) {
+        const currentPassword = document.getElementById('current_password').value.trim();
+        const newPassword = document.getElementById('new_password').value.trim();
+        const confirmPassword = document.getElementById('confirm_password').value.trim();
+        
+        console.log('Password form submission:', {
+            currentPassword: currentPassword ? '***' : 'empty',
+            newPassword: newPassword ? '***' : 'empty',
+            confirmPassword: confirmPassword ? '***' : 'empty',
+            action: 'change_password'
+        });
+        
+        if (!currentPassword) {
+            e.preventDefault();
+            showToast('Please enter your current password', 'error');
+            return false;
+        }
+        
+        if (!newPassword) {
+            e.preventDefault();
+            showToast('Please enter a new password', 'error');
+            return false;
+        }
+        
+        if (newPassword.length < 6) {
+            e.preventDefault();
+            showToast('New password must be at least 6 characters', 'error');
+            return false;
+        }
+        
+        // Updated regex: requires at least one letter and one number
+        if (!/^(?=.*[a-zA-Z])(?=.*\d).+$/.test(newPassword)) {
+            e.preventDefault();
+            showToast('New password must contain at least one letter and one number', 'error');
+            return false;
+        }
+        
+        if (newPassword !== confirmPassword) {
+            e.preventDefault();
+            showToast('Passwords do not match', 'error');
+            return false;
+        }
+        
+        // Check if new password is the same as current
+        if (currentPassword === newPassword) {
+            if (!confirm('New password is the same as current password. Continue anyway?')) {
+                e.preventDefault();
+                return false;
+            }
+        }
+        
+        console.log('Form validation passed, submitting...');
+        return true;
+    });
+    
+    // Toast notification function
+    function showToast(message, type = 'success') {
+        // Remove existing toast
+        const existingToast = document.getElementById('edit-toast');
+        if (existingToast) {
+            existingToast.remove();
+        }
+        
+        // Create new toast
+        const toast = document.createElement('div');
+        toast.id = 'edit-toast';
+        toast.textContent = message;
+        toast.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: ${type === 'error' ? '#e74c3c' : '#4CAF50'};
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            z-index: 10000;
+            font-weight: bold;
+            animation: slideIn 0.3s ease;
+        `;
+        
+        document.body.appendChild(toast);
+        
+        // Auto-remove after 3 seconds
+        setTimeout(() => {
+            toast.style.animation = 'slideOut 0.3s ease';
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+        
+        // Add animation styles if not present
+        if (!document.querySelector('#toast-animations')) {
+            const style = document.createElement('style');
+            style.id = 'toast-animations';
+            style.textContent = `
+                @keyframes slideIn {
+                    from { transform: translateX(100%); opacity: 0; }
+                    to { transform: translateX(0); opacity: 1; }
+                }
+                @keyframes slideOut {
+                    from { transform: translateX(0); opacity: 1; }
+                    to { transform: translateX(100%); opacity: 0; }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+    }
+    
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        // Ctrl/Cmd + Enter to submit form
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+            e.preventDefault();
+            const activeTab = document.querySelector('.tab-content.active').id;
+            if (activeTab === 'profile-tab') {
+                document.getElementById('profile-form').submit();
+            } else if (activeTab === 'avatar-tab') {
+                document.getElementById('avatar-form').submit();
+            } else if (activeTab === 'password-tab') {
+                document.getElementById('password-form').submit();
+            }
+        }
+        
+        // Alt + P for profile tab
+        if (e.altKey && e.key === 'p') {
+            e.preventDefault();
+            document.querySelector('.edit-tab[onclick*="profile"]').click();
+        }
+        
+        // Alt + A for avatar tab
+        if (e.altKey && e.key === 'a') {
+            e.preventDefault();
+            document.querySelector('.edit-tab[onclick*="avatar"]').click();
+        }
+        
+        // Alt + W for password tab
+        if (e.altKey && e.key === 'w') {
+            e.preventDefault();
+            document.querySelector('.edit-tab[onclick*="password"]').click();
+        }
+        
+        // Alt + G to generate secure password
+        if (e.altKey && e.key === 'g' && document.getElementById('password-tab').classList.contains('active')) {
+            e.preventDefault();
+            generateSecurePassword();
+        }
+        
+        // Escape to go back
+        if (e.key === 'Escape') {
+            if (confirm('Return to profile without saving?')) {
+                window.location.href = "{% url 'profile' %}";
+            }
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,887 @@
+{% extends "base.html" %}
+
+{% block title %}Chat Rooms - SimpleChat{% endblock %}
+
+{% block page_title %}Chat Rooms Management{% endblock %}
+
+{% block extra_css %}
+<style>
+    .rooms-container {
+        display: flex;
+        flex-direction: column;
+        gap: 25px;
+    }
+    
+    /* Room Creation Panel */
+    .creation-panel {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 25px;
+    }
+    
+    .panel-card {
+        background: white;
+        border-radius: 12px;
+        padding: 30px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+        border: 1px solid #e9ecef;
+    }
+    
+    .panel-title {
+        font-size: 20px;
+        color: #2c3e50;
+        margin-bottom: 25px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    /* Toggle Switch */
+    .toggle-group {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin: 20px 0;
+    }
+    
+    .switch {
+        position: relative;
+        display: inline-block;
+        width: 60px;
+        height: 34px;
+    }
+    
+    .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+    
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: .4s;
+        border-radius: 34px;
+    }
+    
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: 26px;
+        width: 26px;
+        left: 4px;
+        bottom: 4px;
+        background-color: white;
+        transition: .4s;
+        border-radius: 50%;
+    }
+    
+    input:checked + .slider {
+        background-color: #4CAF50;
+    }
+    
+    input:checked + .slider:before {
+        transform: translateX(26px);
+    }
+    
+    /* Room List */
+    .rooms-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: 20px;
+        margin-top: 20px;
+    }
+    
+    .room-card {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        border: 1px solid #e9ecef;
+        transition: all 0.3s;
+        position: relative;
+    }
+    
+    .room-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.12);
+        border-color: #4CAF50;
+    }
+    
+    .room-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+    
+    .room-name {
+        font-size: 18px;
+        font-weight: 600;
+        color: #2c3e50;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .room-type {
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: bold;
+    }
+    
+    .room-public {
+        background: #d4edda;
+        color: #155724;
+    }
+    
+    .room-private {
+        background: #fff3cd;
+        color: #856404;
+    }
+    
+    .room-details {
+        margin: 15px 0;
+        color: #6c757d;
+        font-size: 14px;
+    }
+    
+    .room-code {
+        background: #f8f9fa;
+        padding: 10px;
+        border-radius: 8px;
+        font-family: monospace;
+        font-size: 16px;
+        font-weight: bold;
+        color: #2c3e50;
+        margin: 10px 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .copy-btn {
+        background: #3498db;
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+    }
+    
+    .room-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-top: 20px;
+    }
+    
+    .action-btn {
+        padding: 12px;
+        border-radius: 8px;
+        text-align: center;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+    
+    .join-btn {
+        background: #4CAF50;
+        color: white;
+    }
+    
+    .join-btn:hover {
+        background: #45a049;
+    }
+    
+    .details-btn {
+        background: #f8f9fa;
+        color: #6c757d;
+        border: 1px solid #e9ecef;
+    }
+    
+    .details-btn:hover {
+        background: #e9ecef;
+    }
+    
+    /* Search and Filter */
+    .search-bar {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 25px;
+    }
+    
+    .search-input {
+        flex: 1;
+        padding: 12px 20px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 15px;
+    }
+    
+    .filter-buttons {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+    }
+    
+    .filter-btn {
+        padding: 8px 16px;
+        background: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 20px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .filter-btn.active {
+        background: #4CAF50;
+        color: white;
+        border-color: #4CAF50;
+    }
+    
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 60px 40px;
+        color: #6c757d;
+    }
+    
+    .empty-icon {
+        font-size: 64px;
+        margin-bottom: 20px;
+        color: #bdc3c7;
+    }
+    
+    /* Random name button */
+    .random-name-btn {
+        background: #f8f9fa;
+        border: 1px solid #e9ecef;
+        color: #6c757d;
+        padding: 6px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 12px;
+        margin-left: 10px;
+        transition: all 0.3s;
+    }
+    
+    .random-name-btn:hover {
+        background: #e9ecef;
+        border-color: #dee2e6;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="rooms-container">
+    <!-- Creation Panel -->
+    <div class="creation-panel">
+        <!-- Create Room -->
+        <div class="panel-card">
+            <div class="panel-title">➕ Create New Room</div>
+            <form method="post" id="create-room-form">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="create_room">
+                
+                <div class="form-group">
+                    <label class="form-label">Room Name (optional)</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" 
+                               class="form-control" 
+                               id="room_name" 
+                               name="room_name" 
+                               placeholder="My Awesome Chat Room"
+                               maxlength="100">
+                        <button type="button" class="random-name-btn" onclick="generateRandomRoomName()">
+                            🎲 Random
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="toggle-group">
+                    <label class="switch">
+                        <input type="checkbox" id="is_private" name="is_private" onchange="togglePasswordField()">
+                        <span class="slider"></span>
+                    </label>
+                    <span style="font-weight: 600;">🔒 Make this room private</span>
+                </div>
+                
+                <div class="form-group" id="password-field" style="display: none;">
+                    <label class="form-label">Room Password</label>
+                    <input type="password" 
+                           class="form-control" 
+                           id="password" 
+                           name="password" 
+                           placeholder="Set a secure password"
+                           minlength="4"
+                           maxlength="50">
+                    <div style="display: flex; justify-content: space-between; margin-top: 5px;">
+                        <small style="color: #6c757d;">Share with friends to join</small>
+                        <button type="button" onclick="generatePassword()" 
+                                style="background: none; border: none; color: #3498db; cursor: pointer; font-size: 12px;">
+                            🎲 Generate Password
+                        </button>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 15px; margin-top: 10px;">
+                    🚀 Create & Join Room
+                </button>
+            </form>
+        </div>
+        
+        <!-- Join Room -->
+        <div class="panel-card">
+            <div class="panel-title">🚪 Join Existing Room</div>
+            
+            <div class="form-group">
+                <label class="form-label">Room Code</label>
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" 
+                           class="form-control" 
+                           id="room_code" 
+                           placeholder="Enter 6-character code"
+                           style="text-transform: uppercase"
+                           maxlength="6">
+                    <button type="button" class="btn btn-primary" onclick="joinRoom()" style="white-space: nowrap;">
+                        Join
+                    </button>
+                </div>
+                <small style="color: #6c757d; display: block; margin-top: 5px;">
+                    Example: X8T9Z4 (uppercase letters and numbers)
+                </small>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Password (if private)</label>
+                <input type="password" 
+                       class="form-control" 
+                       id="join_password" 
+                       placeholder="Enter room password">
+            </div>
+            
+            <div style="margin-top: 25px; padding-top: 20px; border-top: 1px solid #e9ecef;">
+                <h4 style="margin-bottom: 15px; color: #2c3e50;">Quick Join</h4>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <button type="button" class="action-btn join-btn" onclick="joinRandomRoom()">
+                        🎲 Random Room
+                    </button>
+                    <button type="button" class="action-btn join-btn" onclick="joinGlobalChat()">
+                        🌍 Global Chat
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Search and Filter -->
+    <div class="panel-card">
+        <div class="search-bar">
+            <input type="text" 
+                   class="search-input" 
+                   placeholder="Search rooms by name or code..." 
+                   id="room-search">
+            <button class="btn btn-primary" onclick="searchRooms()" style="padding: 12px 25px;">
+                🔍 Search
+            </button>
+        </div>
+        
+        <div class="filter-buttons">
+            <button class="filter-btn active" onclick="filterRooms('all')">All Rooms</button>
+            <button class="filter-btn" onclick="filterRooms('public')">🌐 Public</button>
+            <button class="filter-btn" onclick="filterRooms('private')">🔒 Private</button>
+            <button class="filter-btn" onclick="filterRooms('recent')">🕒 Recent</button>
+            <button class="filter-btn" onclick="filterRooms('active')">🔥 Active</button>
+        </div>
+    </div>
+    
+    <!-- Room List -->
+    <div class="panel-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+            <div class="panel-title">📋 Active Chat Rooms</div>
+            <div style="color: #6c757d; font-size: 14px;">
+                Showing <span id="rooms-count">{{ recent_rooms|length }}</span> rooms
+            </div>
+        </div>
+        
+        {% if recent_rooms %}
+        <div class="rooms-grid" id="rooms-grid">
+            {% for room in recent_rooms %}
+            <div class="room-card" 
+                 data-room-name="{{ room.name|default:'Unnamed Room'|lower }}" 
+                 data-room-code="{{ room.short_code|default:''|lower }}"
+                 data-room-type="{% if room.is_private %}private{% else %}public{% endif %}"
+                 data-room-status="{% if room.is_closed %}closed{% else %}active{% endif %}"
+                 data-room-date="{{ room.created_at|date:'U' }}">
+                <div class="room-header">
+                    <div class="room-name">
+                        {% if room.is_private %}🔒{% else %}🌐{% endif %}
+                        <span class="room-name-text">{{ room.name|default:"Unnamed Room"|truncatechars:25 }}</span>
+                    </div>
+                    <div class="room-type {% if room.is_private %}room-private{% else %}room-public{% endif %}">
+                        {% if room.is_private %}Private{% else %}Public{% endif %}
+                    </div>
+                </div>
+                
+                <div class="room-details">
+                    <div>Created: {{ room.created_at|timesince }} ago</div>
+                    <div>Status: {% if room.is_closed %}❌ Closed{% else %}✅ Active{% endif %}</div>
+                </div>
+                
+                {% if room.short_code %}
+                <div class="room-code">
+                    <span>Room Code: {{ room.short_code }}</span>
+                    <button class="copy-btn" onclick="copyCode('{{ room.short_code }}')">
+                        📋 Copy
+                    </button>
+                </div>
+                {% endif %}
+                
+                <div class="room-actions">
+                    <a href="{% url 'room' room.id %}" class="action-btn join-btn">
+                        Join Room
+                    </a>
+                    <button class="action-btn details-btn" onclick="showRoomDetails('{{ room.id }}')">
+                        Details
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <div style="text-align: center; margin-top: 30px;">
+            <button class="btn btn-secondary" onclick="loadMoreRooms()" style="padding: 12px 30px;">
+                🔄 Load More Rooms
+            </button>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">🚪</div>
+            <h3>No active rooms found</h3>
+            <p>Be the first to create a chat room and start the conversation!</p>
+            <button class="btn btn-primary" onclick="document.getElementById('room_name').focus()" style="margin-top: 20px;">
+                Create First Room
+            </button>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    // Random room name generator
+    const randomNames = [
+        // Real words
+        "Cosmic Lounge", "Digital Oasis", "Pixel Haven", "Quantum Café", "Cyber Nexus",
+        "Virtual Valley", "Neon Garden", "Silicon Sphere", "Binary Bistro", "Data Den",
+        "Tech Terrace", "Code Canyon", "Pixel Plaza", "Digital Dome", "Cyber Cove",
+        // Imaginary/creative names
+        "Zephyr Zone", "Aether Alcove", "Nebula Nook", "Celestial Sphere", "Lunar Lounge",
+        "Starlight Studio", "Aurora Alcove", "Galaxy Garage", "Orbit Oasis", "Nova Nexus",
+        "Quantum Quasar", "Solar Sanctuary", "Cosmic Courtyard", "Stellar Studio", "Infinity Inn",
+        "Echo Chamber", "Whisper Wall", "Harmony Hall", "Melody Mansion", "Rhythm Room",
+        "Synergy Space", "Vibe Villa", "Groove Garage", "Beat Bungalow", "Tune Terrace"
+    ];
+    
+    // Toggle password field
+    function togglePasswordField() {
+        const passwordField = document.getElementById('password-field');
+        const isPrivate = document.getElementById('is_private').checked;
+        
+        if (isPrivate) {
+            passwordField.style.display = 'block';
+            setTimeout(() => {
+                document.getElementById('password').focus();
+            }, 100);
+        } else {
+            passwordField.style.display = 'none';
+        }
+    }
+    
+    // Generate random password
+    function generatePassword() {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%&*';
+        let password = '';
+        for (let i = 0; i < 12; i++) {
+            password += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        
+        document.getElementById('password').value = password;
+        document.getElementById('is_private').checked = true;
+        togglePasswordField();
+        
+        // Show password in alert
+        alert(`Generated password: ${password}\n\nCopy this password to share with friends!`);
+        
+        // Copy to clipboard
+        navigator.clipboard.writeText(password);
+    }
+    
+    // Generate random room name
+    function generateRandomRoomName() {
+        const randomIndex = Math.floor(Math.random() * randomNames.length);
+        const randomName = randomNames[randomIndex];
+        document.getElementById('room_name').value = randomName;
+        showToast(`Generated: "${randomName}"`);
+    }
+    
+    // Join room with code
+    function joinRoom() {
+        const roomCode = document.getElementById('room_code').value.trim().toUpperCase();
+        const password = document.getElementById('join_password').value.trim();
+        
+        // Validate format
+        const codeRegex = /^[A-Z0-9]{6}$/;
+        if (!codeRegex.test(roomCode)) {
+            alert('Please enter a valid 6-character room code\n(Only uppercase letters A-Z and numbers 0-9)');
+            return;
+        }
+        
+        let url = `/chat/${roomCode}/`;
+        if (password) {
+            url += `?password=${encodeURIComponent(password)}`;
+        }
+        
+        window.location.href = url;
+    }
+    
+    // Join random room
+    async function joinRandomRoom() {
+        try {
+            const response = await fetch('/api/random-room/');
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+                if (confirm(`Join random room:\n\nRoom: ${data.room_name}\nCode: ${data.short_code || data.room_id.slice(0, 8)}`)) {
+                    window.location.href = `/chat/${data.short_code || data.room_id}/`;
+                }
+            } else {
+                alert('No active rooms available. Create one first!');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Could not find a random room');
+        }
+    }
+    
+    // Join global chat
+    function joinGlobalChat() {
+        window.location.href = '/chat/global/';
+    }
+    
+    // Copy room code
+    function copyCode(code) {
+        navigator.clipboard.writeText(code).then(() => {
+            showToast(`Room code copied: ${code}`);
+        });
+    }
+    
+    // Show toast notification
+    function showToast(message) {
+        // Remove existing toast
+        const existingToast = document.getElementById('custom-toast');
+        if (existingToast) {
+            existingToast.remove();
+        }
+        
+        // Create new toast
+        const toast = document.createElement('div');
+        toast.id = 'custom-toast';
+        toast.textContent = message;
+        toast.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #2ecc71;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            z-index: 10000;
+            font-weight: bold;
+            animation: slideIn 0.3s ease;
+        `;
+        
+        document.body.appendChild(toast);
+        
+        // Auto-remove after 3 seconds
+        setTimeout(() => {
+            toast.style.animation = 'slideOut 0.3s ease';
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+        
+        // Add animation styles if not present
+        if (!document.querySelector('#toast-animations')) {
+            const style = document.createElement('style');
+            style.id = 'toast-animations';
+            style.textContent = `
+                @keyframes slideIn {
+                    from { transform: translateX(100%); opacity: 0; }
+                    to { transform: translateX(0); opacity: 1; }
+                }
+                @keyframes slideOut {
+                    from { transform: translateX(0); opacity: 1; }
+                    to { transform: translateX(100%); opacity: 0; }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+    }
+    
+    // Filter rooms - Now actually filters rooms on the page
+    function filterRooms(filter) {
+        const filterButtons = document.querySelectorAll('.filter-btn');
+        filterButtons.forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
+        
+        const roomCards = document.querySelectorAll('.room-card');
+        const now = Math.floor(Date.now() / 1000);
+        const oneDayAgo = now - (24 * 60 * 60);
+        const oneHourAgo = now - (60 * 60);
+        
+        let visibleCount = 0;
+        
+        roomCards.forEach(card => {
+            const isPrivate = card.getAttribute('data-room-type') === 'private';
+            const isPublic = card.getAttribute('data-room-type') === 'public';
+            const isActive = card.getAttribute('data-room-status') === 'active';
+            const createdDate = parseInt(card.getAttribute('data-room-date'));
+            const isRecent = createdDate > oneDayAgo;
+            const isVeryActive = createdDate > oneHourAgo;
+            
+            let showCard = false;
+            
+            switch(filter) {
+                case 'all':
+                    showCard = true;
+                    break;
+                case 'public':
+                    showCard = isPublic;
+                    break;
+                case 'private':
+                    showCard = isPrivate;
+                    break;
+                case 'recent':
+                    showCard = isRecent;
+                    break;
+                case 'active':
+                    showCard = isActive && isVeryActive;
+                    break;
+            }
+            
+            if (showCard) {
+                card.style.display = 'block';
+                visibleCount++;
+                setTimeout(() => {
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, 50);
+            } else {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(10px)';
+                setTimeout(() => {
+                    card.style.display = 'none';
+                }, 300);
+            }
+        });
+        
+        // Update rooms count
+        document.getElementById('rooms-count').textContent = visibleCount;
+        
+        // Show empty state if no rooms visible
+        const roomsGrid = document.getElementById('rooms-grid');
+        if (roomsGrid && visibleCount === 0) {
+            const emptyState = document.querySelector('.empty-state') || createEmptyState();
+            roomsGrid.parentNode.insertBefore(emptyState, roomsGrid);
+            roomsGrid.style.display = 'none';
+        } else if (roomsGrid) {
+            const emptyState = document.querySelector('.empty-state');
+            if (emptyState) emptyState.remove();
+            roomsGrid.style.display = 'grid';
+        }
+        
+        showToast(`Showing ${filter} rooms (${visibleCount} found)`);
+    }
+    
+    function createEmptyState() {
+        const div = document.createElement('div');
+        div.className = 'empty-state';
+        div.innerHTML = `
+            <div class="empty-icon">🔍</div>
+            <h3>No rooms match your filter</h3>
+            <p>Try a different filter or create a new room!</p>
+            <button class="btn btn-primary" onclick="filterRooms('all')" style="margin-top: 20px;">
+                Show All Rooms
+            </button>
+        `;
+        return div;
+    }
+    
+    // Search rooms - Now actually searches through rooms
+    function searchRooms() {
+        const query = document.getElementById('room-search').value.trim().toLowerCase();
+        const roomCards = document.querySelectorAll('.room-card');
+        
+        if (!query) {
+            // If search is empty, show all rooms
+            roomCards.forEach(card => {
+                card.style.display = 'block';
+                setTimeout(() => {
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, 50);
+            });
+            document.getElementById('rooms-count').textContent = roomCards.length;
+            showToast('Showing all rooms');
+            return;
+        }
+        
+        let matchCount = 0;
+        
+        roomCards.forEach(card => {
+            const roomName = card.getAttribute('data-room-name');
+            const roomCode = card.getAttribute('data-room-code');
+            
+            const matchesName = roomName.includes(query);
+            const matchesCode = roomCode.includes(query);
+            
+            if (matchesName || matchesCode) {
+                card.style.display = 'block';
+                matchCount++;
+                
+                // Highlight matching text
+                const nameElement = card.querySelector('.room-name-text');
+                if (nameElement && matchesName) {
+                    const originalText = card.getAttribute('data-room-name');
+                    const highlightedText = originalText.replace(
+                        new RegExp(`(${query})`, 'gi'),
+                        '<mark>$1</mark>'
+                    );
+                    nameElement.innerHTML = highlightedText;
+                }
+                
+                setTimeout(() => {
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, 50);
+            } else {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(10px)';
+                setTimeout(() => {
+                    card.style.display = 'none';
+                }, 300);
+            }
+        });
+        
+        // Update rooms count
+        document.getElementById('rooms-count').textContent = matchCount;
+        
+        // Show search results message
+        if (matchCount === 0) {
+            showToast(`No rooms found for "${query}"`);
+        } else {
+            showToast(`Found ${matchCount} room(s) for "${query}"`);
+        }
+    }
+    
+    // Show room details
+    function showRoomDetails(roomId) {
+        // In a real app, show a modal with room details
+        showToast('Room details feature coming soon!');
+    }
+    
+    // Load more rooms
+    function loadMoreRooms() {
+        showToast('Loading more rooms...');
+        // In a real app, implement pagination
+    }
+    
+    // Auto-format room code input
+    document.getElementById('room_code').addEventListener('input', function(e) {
+        this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+        if (this.value.length > 6) {
+            this.value = this.value.substring(0, 6);
+        }
+    });
+    
+    // Enable Enter key for search
+    document.getElementById('room-search').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            searchRooms();
+        }
+    });
+    
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        // Alt + C to focus on create room name
+        if (e.altKey && e.key === 'c') {
+            e.preventDefault();
+            document.getElementById('room_name').focus();
+        }
+        
+        // Alt + J to focus on join room code
+        if (e.altKey && e.key === 'j') {
+            e.preventDefault();
+            document.getElementById('room_code').focus();
+        }
+        
+        // Alt + R for random name
+        if (e.altKey && e.key === 'r') {
+            e.preventDefault();
+            generateRandomRoomName();
+        }
+        
+        // Alt + S for search
+        if (e.altKey && e.key === 's') {
+            e.preventDefault();
+            document.getElementById('room-search').focus();
+        }
+        
+        // Enter to submit create form when in name field
+        if (e.key === 'Enter' && document.activeElement.id === 'room_name') {
+            document.getElementById('create-room-form').submit();
+        }
+        
+        // Enter to join room when in code field
+        if (e.key === 'Enter' && document.activeElement.id === 'room_code') {
+            joinRoom();
+        }
+        
+        // Enter to search when in search field
+        if (e.key === 'Enter' && document.activeElement.id === 'room-search') {
+            searchRooms();
+        }
+    });
+    
+    // Auto-focus on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        // Check if there's a room code in URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const roomCodeParam = urlParams.get('code');
+        if (roomCodeParam) {
+            document.getElementById('room_code').value = roomCodeParam.toUpperCase();
+        }
+        
+        // Check for auto-join flag
+        const autoJoin = urlParams.get('autojoin');
+        if (autoJoin === 'true') {
+            document.getElementById('room_code').focus();
+        }
+        
+        // Check for search query
+        const searchQuery = urlParams.get('search');
+        if (searchQuery) {
+            document.getElementById('room-search').value = searchQuery;
+            setTimeout(() => searchRooms(), 100);
+        }
+    });
+</script>
+{% endblock %}

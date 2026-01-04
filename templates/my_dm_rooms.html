@@ -1,0 +1,309 @@
+{% extends "base.html" %}
+
+{% block title %}My Direct Messages - SimpleChat{% endblock %}
+
+{% block page_title %}My Direct Messages{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dm-container {
+        display: flex;
+        flex-direction: column;
+        gap: 25px;
+    }
+    
+    /* Action Bar */
+    .action-bar {
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 20px;
+    }
+    
+    .search-box {
+        position: relative;
+        flex: 1;
+        max-width: 400px;
+    }
+    
+    .search-input {
+        width: 100%;
+        padding: 12px 15px 12px 40px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 15px;
+        transition: border-color 0.3s;
+    }
+    
+    .search-input:focus {
+        border-color: #3498db;
+        outline: none;
+    }
+    
+    .search-icon {
+        position: absolute;
+        left: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #95a5a6;
+    }
+    
+    .new-dm-btn {
+        background: #3498db;
+        color: white;
+        padding: 12px 25px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: background 0.3s;
+        border: none;
+        cursor: pointer;
+    }
+    
+    .new-dm-btn:hover {
+        background: #2980b9;
+    }
+    
+    /* DM Grid */
+    .dm-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+    }
+    
+    .dm-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        transition: transform 0.3s, box-shadow 0.3s;
+        border: 1px solid #e9ecef;
+        display: flex;
+        align-items: center;
+        text-decoration: none;
+        color: inherit;
+        position: relative;
+    }
+    
+    .dm-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        border-color: #3498db;
+    }
+    
+    .dm-avatardm {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        margin-right: 20px;
+        position: relative;
+        background: #f0f0f0;
+        flex-shrink: 0;
+    }
+    
+    .dm-avatardm img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 50%;
+    }
+    
+    .status-indicator {
+        position: absolute;
+        bottom: 2px;
+        right: 2px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        border: 2px solid white;
+    }
+    
+    .status-online { background-color: #2ecc71; }
+    .status-offline { background-color: #95a5a6; }
+    
+    .dm-info {
+        flex: 1;
+        min-width: 0;
+    }
+    
+    .dm-name {
+        font-weight: bold;
+        color: #2c3e50;
+        margin-bottom: 5px;
+        font-size: 16px;
+    }
+    
+    .dm-last-msg {
+        font-size: 13px;
+        color: #7f8c8d;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .dm-meta {
+        font-size: 11px;
+        color: #95a5a6;
+        margin-top: 5px;
+        display: flex;
+        justify-content: space-between;
+    }
+    
+    .unread-badge {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        background: #e74c3c;
+        color: white;
+        font-size: 10px;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-weight: bold;
+    }
+    
+    .empty-state {
+        grid-column: 1 / -1;
+        text-align: center;
+        padding: 50px;
+        background: white;
+        border-radius: 12px;
+        color: #95a5a6;
+    }
+    
+    .empty-icon {
+        font-size: 48px;
+        margin-bottom: 15px;
+        color: #bdc3c7;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dm-container">
+    <!-- Action Bar -->
+    <div class="action-bar">
+        <div class="search-box">
+            <i class="fas fa-search search-icon"></i>
+            <input type="text" id="dm-search" class="search-input" placeholder="Search conversations...">
+        </div>
+        
+        <a href="{% url 'friend_list' %}" class="new-dm-btn">
+            <i class="fas fa-plus"></i> New Message
+        </a>
+    </div>
+
+    <!-- DM Grid -->
+    <div class="dm-grid" id="dm-grid">
+        {% if dm_rooms %}
+            {% for dm in dm_rooms %}
+            <a href="{% url 'room' dm.room.id %}" class="dm-card" data-username="{{ dm.friend_name|lower }}">
+                <div class="dm-avatardm">
+                     <img src="/static/avatars/{{ dm.friend.profile.avatar|default:'avt1.jpg' }}" 
+                         alt="{{ dm.friend_name }}"
+                         data-name="{{ dm.friend_name }}"
+                         onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name=' + encodeURIComponent(this.dataset.name) + '&background=random&color=fff&size=128'">
+                    <span class="status-indicator {% if dm.is_online %}status-online{% else %}status-offline{% endif %}"></span>
+                </div>
+                <div class="dm-info">
+                    <div class="dm-name">{{ dm.friend_name }}</div>
+                    <div class="dm-last-msg">
+                        {% if dm.last_message %}
+                            {{ dm.last_message }}
+                        {% else %}
+                            Start a conversation
+                        {% endif %}
+                    </div>
+                    <div class="dm-meta">
+                        <span>
+                            {% if dm.last_message_time %}
+                                {{ dm.last_message_time }}
+                            {% else %}
+                                New
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+                {% if dm.unread_count > 0 %}
+                <div class="unread-badge">{{ dm.unread_count }}</div>
+                {% endif %}
+            </a>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <div class="empty-icon"><i class="far fa-comments"></i></div>
+                <h3>No messages yet</h3>
+                <p>Start a conversation with a friend!</p>
+                <a href="{% url 'friend_list' %}" class="new-dm-btn" style="display: inline-flex; margin-top: 15px;">
+                    Find Friends
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Search functionality
+    function searchDMs() {
+        const input = document.getElementById('dm-search');
+        const filter = input.value.toLowerCase();
+        const grid = document.getElementById('dm-grid');
+        const cards = grid.getElementsByClassName('dm-card');
+        let hasVisible = false;
+
+        for (let i = 0; i < cards.length; i++) {
+            const username = cards[i].getAttribute('data-username');
+            if (username.indexOf(filter) > -1) {
+                cards[i].style.display = "flex";
+                hasVisible = true;
+            } else {
+                cards[i].style.display = "none";
+            }
+        }
+        
+        // Handle empty search results
+        let emptyState = grid.querySelector('.empty-search');
+        if (!hasVisible && filter !== '') {
+            if (!emptyState) {
+                emptyState = document.createElement('div');
+                emptyState.className = 'empty-state empty-search';
+                emptyState.innerHTML = `
+                    <div class="empty-icon"><i class="fas fa-search"></i></div>
+                    <h3>No conversations found</h3>
+                    <p>Try a different name</p>
+                `;
+                grid.appendChild(emptyState);
+            }
+        } else if (emptyState) {
+            emptyState.remove();
+        }
+    }
+    
+    // Auto-search as user types
+    document.getElementById('dm-search').addEventListener('keyup', searchDMs);
+    
+    // Keyboard shortcut for search
+    document.addEventListener('keydown', function(e) {
+        if (e.altKey && e.key === 's') {
+            e.preventDefault();
+            document.getElementById('dm-search').focus();
+        }
+    });
+
+    // Auto-refresh page every 30 seconds to update online status
+    setTimeout(() => {
+        // Only refresh if user is not searching
+        if (document.getElementById('dm-search').value === '') {
+             window.location.reload();
+        }
+    }, 30000);
+</script>
+{% endblock %}

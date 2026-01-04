@@ -1,0 +1,256 @@
+{% extends "base.html" %}
+
+{% block title %}Notifications - SimpleChat{% endblock %}
+{% block page_title %}Notifications{% endblock %}
+{% block extra_css %}
+<style>
+    .notifications-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .notification-item {
+        background: white;
+        border-left: 4px solid #3498db;
+        padding: 20px;
+        margin-bottom: 15px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        transition: transform 0.3s;
+    }
+    
+    .notification-item:hover {
+        transform: translateX(5px);
+    }
+    
+    .notification-item.unread {
+        background: #f8f9fa;
+        border-left-color: #e74c3c;
+    }
+    
+    .notification-item.read {
+        background: white;
+        border-left-color: #95a5a6;
+        opacity: 0.8;
+    }
+    
+    .notification-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+    
+    .notification-title {
+        font-weight: bold;
+        color: #2c3e50;
+        font-size: 16px;
+    }
+    
+    .notification-time {
+        font-size: 12px;
+        color: #6c757d;
+    }
+    
+    .notification-message {
+        color: #495057;
+        margin-bottom: 10px;
+    }
+    
+    .notification-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 10px;
+    }
+    
+    .btn-small {
+        padding: 5px 10px;
+        font-size: 12px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    
+    .btn-mark-read {
+        background: #2ecc71;
+        color: white;
+    }
+    
+    .btn-action {
+        background: #3498db;
+        color: white;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #6c757d;
+    }
+    
+    .empty-state i {
+        font-size: 64px;
+        margin-bottom: 20px;
+        color: #bdc3c7;
+    }
+    
+    .header-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    
+    .mark-all-read {
+        background: #4CAF50;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 6px;
+        cursor: pointer;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="notifications-container">
+    <div class="header-actions">
+        <h1>🔔 Notifications {% if unread_count > 0 %}<small>({{ unread_count }} unread)</small>{% endif %}</h1>
+        {% if unread_count > 0 %}
+        <button class="mark-all-read" onclick="markAllAsRead()">
+            Mark All as Read
+        </button>
+        {% endif %}
+    </div>
+    
+    {% if notifications %}
+        {% for notification in notifications %}
+        <div class="notification-item {% if not notification.is_read %}unread{% else %}read{% endif %}" 
+             id="notification-{{ notification.id }}">
+            <div class="notification-header">
+                <div class="notification-title">
+                    {% if notification.notification_type == 'friend_request' %}
+                    👥 Friend Request
+                    {% elif notification.notification_type == 'friend_accepted' %}
+                    ✅ Friend Request Accepted
+                    {% elif notification.notification_type == 'message' %}
+                    💬 New Message
+                    {% elif notification.notification_type == 'room_invite' %}
+                    🚪 Room Invitation
+                    {% elif notification.notification_type == 'complaint_reply' %}
+                    📋 Complaint Update
+                    {% else %}
+                    📢 Notification
+                    {% endif %}
+                </div>
+                <div class="notification-time">
+                    {{ notification.created_at|timesince }} ago
+                </div>
+            </div>
+            
+            <div class="notification-message">
+                {{ notification.message }}
+            </div>
+            
+            <div class="notification-actions">
+                {% if not notification.is_read %}
+                <button class="btn-small btn-mark-read" onclick="markAsRead('{{ notification.id }}')">
+                    Mark as Read
+                </button>
+                {% endif %}
+                
+                {% if notification.notification_type == 'friend_request' and notification.related_id %}
+                <button class="btn-small btn-action" onclick="viewFriendRequest('{{ notification.related_id }}')">
+                    View Request
+                </button>
+                {% elif notification.notification_type == 'room_invite' and notification.related_id %}
+                <button class="btn-small btn-action" onclick="joinRoom('{{ notification.related_id }}')">
+                    Join Room
+                </button>
+                {% elif notification.notification_type == 'complaint_reply' and notification.related_id %}
+                <button class="btn-small btn-action" onclick="viewComplaint('{{ notification.related_id }}')">
+                    View Reply
+                </button>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="empty-state">
+            <div>📭</div>
+            <h3>No notifications yet</h3>
+            <p>When you get friend requests, messages, or other updates, they'll appear here.</p>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+    // Mark single notification as read
+    function markAsRead(notificationId) {
+        fetch('{% url "mark_notification_read" %}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `notification_id=${notificationId}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                const notification = document.getElementById(`notification-${notificationId}`);
+                if (notification) {
+                    notification.classList.remove('unread');
+                    notification.classList.add('read');
+                    
+                    // Remove the mark as read button
+                    const markReadBtn = notification.querySelector('.btn-mark-read');
+                    if (markReadBtn) {
+                        markReadBtn.remove();
+                    }
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    }
+    
+    // Mark all notifications as read
+    function markAllAsRead() {
+        // Get all unread notifications
+        const unreadNotifications = document.querySelectorAll('.notification-item.unread');
+        
+        unreadNotifications.forEach(notification => {
+            const notificationId = notification.id.replace('notification-', '');
+            markAsRead(notificationId);
+        });
+        
+        // Update the unread count in header
+        const unreadCountElement = document.querySelector('h1 small');
+        if (unreadCountElement) {
+            unreadCountElement.textContent = '(0 unread)';
+        }
+        
+        // Hide the mark all button
+        const markAllBtn = document.querySelector('.mark-all-read');
+        if (markAllBtn) {
+            markAllBtn.style.display = 'none';
+        }
+    }
+    
+    // View friend request (redirect to friends page)
+    function viewFriendRequest(requestId) {
+        window.location.href = '{% url "friend_list" %}';
+    }
+    
+    // Join room from invitation
+    function joinRoom(roomId) {
+        window.location.href = `/chat/${roomId}/`;
+    }
+    
+    // View complaint reply
+    function viewComplaint(complaintId) {
+        window.location.href = `{% url "view_complaints" %}?highlight=${complaintId}`;
+    }
+</script>
+{% endblock %}

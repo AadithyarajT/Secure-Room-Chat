@@ -1,0 +1,939 @@
+<!-- templates/profile.html -->
+{% extends "base.html" %}
+
+{% block title %}My Profile - SimpleChat{% endblock %}
+
+{% block page_title %}My Profile{% endblock %}
+
+{% block extra_css %}
+<style>
+    .profile-container {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    
+    .profile-card {
+        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+        border-radius: 20px;
+        padding: 50px;
+        box-shadow: 0 15px 40px rgba(0,0,0,0.08);
+        border: 1px solid #eef2f7;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .profile-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #4CAF50 0%, #3498db 50%, #9b59b6 100%);
+    }
+    
+    .profile-header {
+        display: flex;
+        align-items: flex-start;
+        gap: 40px;
+        margin-bottom: 50px;
+        padding-bottom: 40px;
+        border-bottom: 2px solid #eef2f7;
+        position: relative;
+    }
+    
+    @media (max-width: 768px) {
+        .profile-header {
+            flex-direction: column;
+            text-align: center;
+            gap: 30px;
+        }
+        
+        .profile-container {
+            padding: 10px;
+        }
+        
+        .profile-card {
+            padding: 30px 20px;
+        }
+    }
+    
+    .avatar-container {
+        position: relative;
+        flex-shrink: 0;
+    }
+    
+    .avatar-large {
+        width: 180px;
+        height: 180px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 6px solid #4CAF50;
+        box-shadow: 0 10px 25px rgba(76, 175, 80, 0.15);
+        transition: transform 0.3s ease;
+    }
+    
+    .avatar-large:hover {
+        transform: scale(1.02);
+    }
+    
+    .online-status {
+        position: absolute;
+        bottom: 15px;
+        right: 15px;
+        width: 24px;
+        height: 24px;
+        background: #2ecc71;
+        border: 3px solid white;
+        border-radius: 50%;
+        box-shadow: 0 2px 8px rgba(46, 204, 113, 0.3);
+    }
+    
+    .profile-info {
+        flex: 1;
+        min-width: 0;
+    }
+    
+    .username-large {
+        font-size: 36px;
+        font-weight: 700;
+        color: #1a202c;
+        margin: 0 0 5px 0;
+        line-height: 1.2;
+        letter-spacing: -0.5px;
+    }
+    
+    .user-title {
+        color: #4CAF50;
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 25px;
+        padding: 6px 14px;
+        background: rgba(76, 175, 80, 0.08);
+        border-radius: 20px;
+        display: inline-block;
+    }
+    
+    .member-since {
+        color: #718096;
+        font-size: 15px;
+        margin-bottom: 25px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        align-items: center;
+    }
+    
+    .member-since span {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .member-since span i {
+        font-size: 14px;
+        opacity: 0.7;
+    }
+    
+    .admin-badge {
+        display: inline-block;
+        background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+        color: white;
+        padding: 6px 16px;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 700;
+        margin-left: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        box-shadow: 0 4px 12px rgba(231, 76, 60, 0.2);
+    }
+    
+    .description-card {
+        background: #ffffff;
+        padding: 30px;
+        border-radius: 16px;
+        border-left: 5px solid #4CAF50;
+        font-size: 16px;
+        line-height: 1.8;
+        color: #2d3748;
+        margin: 25px 0;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.03);
+        border: 1px solid #eef2f7;
+    }
+    
+    .description-card.empty {
+        font-style: italic;
+        color: #a0aec0;
+        background: #f8fafc;
+        border-color: #e2e8f0;
+    }
+    
+    .description-card .edit-link {
+        color: #4CAF50;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 15px;
+        transition: color 0.2s;
+    }
+    
+    .description-card .edit-link:hover {
+        color: #3d8b40;
+        text-decoration: underline;
+    }
+    
+    /* Enhanced Statistics Grid */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 25px;
+        margin: 40px 0;
+    }
+    
+    .stat-card {
+        background: white;
+        padding: 30px;
+        border-radius: 16px;
+        text-align: center;
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+        cursor: pointer;
+        border: 1px solid #eef2f7;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.05);
+    }
+    
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 5px;
+        background: linear-gradient(90deg, #4CAF50 0%, #4CAF50 100%);
+    }
+    
+    .stat-card:nth-child(2)::before { background: linear-gradient(90deg, #3498db 0%, #3498db 100%); }
+    .stat-card:nth-child(3)::before { background: linear-gradient(90deg, #e74c3c 0%, #e74c3c 100%); }
+    .stat-card:nth-child(4)::before { background: linear-gradient(90deg, #9b59b6 0%, #9b59b6 100%); }
+    
+    .stat-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        border-color: #4CAF50;
+    }
+    
+    .stat-icon {
+        font-size: 42px;
+        margin-bottom: 15px;
+        display: block;
+        opacity: 0.9;
+    }
+    
+    .stat-number {
+        font-size: 42px;
+        font-weight: 800;
+        color: #2d3748;
+        margin-bottom: 8px;
+        font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        letter-spacing: -1px;
+    }
+    
+    .stat-number.friends { color: #4CAF50; }
+    .stat-number.rooms { color: #3498db; }
+    .stat-number.messages { color: #e74c3c; }
+    .stat-number.days { color: #9b59b6; }
+    
+    .stat-label {
+        font-size: 15px;
+        color: #718096;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .stat-subtext {
+        font-size: 13px;
+        color: #a0aec0;
+        margin-top: 6px;
+        font-weight: 400;
+    }
+    
+    /* Enhanced Activity Summary */
+    .activity-summary {
+        background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+        padding: 35px;
+        border-radius: 16px;
+        margin: 40px 0;
+        border: 1px solid #eef2f7;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.03);
+    }
+    
+    .activity-summary h3 {
+        color: #2d3748;
+        margin-bottom: 25px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 20px;
+        font-weight: 700;
+    }
+    
+    .activity-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 25px;
+    }
+    
+    .activity-item {
+        background: white;
+        padding: 25px;
+        border-radius: 12px;
+        border-left: 4px solid #3498db;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+    }
+    
+    .activity-item:nth-child(2) { border-left-color: #9b59b6; }
+    
+    .activity-label {
+        font-size: 14px;
+        color: #718096;
+        font-weight: 600;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .activity-value {
+        font-size: 18px;
+        font-weight: 700;
+        color: #2d3748;
+    }
+    
+    .activity-value.active {
+        color: #2ecc71;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .activity-value.inactive {
+        color: #e74c3c;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    /* Enhanced Profile Actions */
+    .profile-actions {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-top: 50px;
+        padding-top: 40px;
+        border-top: 2px solid #eef2f7;
+    }
+    
+    @media (max-width: 768px) {
+        .profile-actions {
+            grid-template-columns: 1fr;
+        }
+    }
+    
+    .profile-actions .btn {
+        padding: 16px 24px;
+        border-radius: 12px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        transition: all 0.3s ease;
+        text-align: center;
+        border: none;
+        font-size: 15px;
+        text-decoration: none;
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+        color: white;
+        box-shadow: 0 8px 20px rgba(76, 175, 80, 0.2);
+    }
+    
+    .btn-primary:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 25px rgba(76, 175, 80, 0.3);
+        background: linear-gradient(135deg, #45a049 0%, #3d8b40 100%);
+    }
+    
+    .btn-secondary {
+        background: #3498db;
+        color: white;
+        box-shadow: 0 8px 20px rgba(52, 152, 219, 0.2);
+    }
+    
+    .btn-secondary:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 25px rgba(52, 152, 219, 0.3);
+        background: #2980b9;
+    }
+    
+    .btn-outline {
+        background: white;
+        color: #4a5568;
+        border: 2px solid #e2e8f0;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    
+    .btn-outline:hover {
+        border-color: #4CAF50;
+        color: #4CAF50;
+        background: rgba(76, 175, 80, 0.02);
+        transform: translateY(-3px);
+    }
+    
+    .logout-btn {
+        background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+        color: white;
+        box-shadow: 0 8px 20px rgba(231, 76, 60, 0.2);
+    }
+    
+    .logout-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 25px rgba(231, 76, 60, 0.3);
+        background: linear-gradient(135deg, #c0392b 0%, #a93226 100%);
+    }
+    
+    /* Avatar fallback styles */
+    .avatar-fallback {
+        width: 180px;
+        height: 180px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #4CAF50 0%, #3498db 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 60px;
+        font-weight: bold;
+        border: 6px solid white;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    }
+    
+    /* Badge container */
+    .badge-container {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+    }
+    
+    .user-badge {
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    
+    .badge-premium {
+        background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+        color: white;
+    }
+    
+    .badge-verified {
+        background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+        color: white;
+    }
+    
+    .badge-contributor {
+        background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
+        color: white;
+    }
+    
+    /* Animation for stat cards */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .animate-card {
+        animation: fadeInUp 0.6s ease forwards;
+        opacity: 0;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 480px) {
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .activity-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .username-large {
+            font-size: 28px;
+        }
+        
+        .stat-number {
+            font-size: 36px;
+        }
+        
+        .avatar-large,
+        .avatar-fallback {
+            width: 140px;
+            height: 140px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="profile-container">
+    <div class="profile-card">
+        <!-- Profile Header -->
+        <div class="profile-header">
+            <!-- Avatar -->
+            <div class="avatar-container">
+                {% if profile.avatar %}
+                <img src="/static/avatars/{{ profile.avatar }}" 
+                     class="avatar-large" 
+                     alt="{{ user.username }}"
+                     onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\'avatar-fallback\'>{{ user.username|first|upper }}</div>';">
+                {% else %}
+                <div class="avatar-fallback">
+                    {{ user.username|first|upper }}
+                </div>
+                {% endif %}
+                {% if user.is_active %}
+                <div class="online-status" title="Online"></div>
+                {% endif %}
+            </div>
+            
+            <!-- Profile Info -->
+            <div class="profile-info">
+                <div class="badge-container">
+                    {% if user.is_staff %}
+                    <span class="admin-badge">ADMINISTRATOR</span>
+                    {% endif %}
+                    {% if days_active > 365 %}
+                    <span class="user-badge badge-premium">🎯 Veteran Member</span>
+                    {% endif %}
+                    {% if friends_count > 50 %}
+                    <span class="user-badge badge-verified">⭐ Social Leader</span>
+                    {% endif %}
+                </div>
+                
+                <h1 class="username-large">
+                    {{ user.username }}
+                </h1>
+                
+                <div class="user-title">
+                    {% if user.is_staff %}Platform Administrator{% else %}Community Member{% endif %}
+                </div>
+                
+                <div class="member-since">
+                    <span>
+                        <i>📅</i>
+                        Member since {{ user.date_joined|date:"F j, Y" }}
+                    </span>
+                    <span>
+                        <i>🆔</i>
+                        User ID: {{ user.id|truncatechars:10 }}
+                    </span>
+                    <span>
+                        <i>🎯</i>
+                        {{ days_active }} days active
+                    </span>
+                </div>
+                
+                <!-- Description -->
+                <div class="description-card {% if not profile.description %}empty{% endif %}">
+                    {% if profile.description %}
+                        {{ profile.description|linebreaks }}
+                        <a href="{% url 'profile_edit' %}" class="edit-link">
+                            ✏️ Edit Description
+                        </a>
+                    {% else %}
+                        <div style="display: flex; flex-direction: column; gap: 15px;">
+                            <p style="margin: 0;">No description provided yet.</p>
+                            <a href="{% url 'profile_edit' %}" class="edit-link">
+                                ✏️ Tell us about yourself
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Statistics Grid -->
+        <div class="stats-grid">
+            <div class="stat-card animate-card" onclick="window.location.href='{% url 'friend_list' %}'" 
+                 style="animation-delay: 0.1s;">
+                <span class="stat-icon">🤝</span>
+                <div class="stat-number friends">{{ friends_count|default:0 }}</div>
+                <div class="stat-label">Connections</div>
+                <div class="stat-subtext">Active Friendships</div>
+            </div>
+            
+            <div class="stat-card animate-card" onclick="window.location.href='{% url 'rooms' %}'" 
+                 style="animation-delay: 0.2s;">
+                <span class="stat-icon">🏛️</span>
+                <div class="stat-number rooms">{{ rooms_created|default:0 }}</div>
+                <div class="stat-label">Rooms Created</div>
+                <div class="stat-subtext">Last 30 days</div>
+            </div>
+            
+            <div class="stat-card animate-card" 
+                 onclick="showToast('{{ messages_sent|default:0 }} messages sent! 📨')"
+                 style="animation-delay: 0.3s;">
+                <span class="stat-icon">💭</span>
+                <div class="stat-number messages">{{ messages_sent|default:0 }}</div>
+                <div class="stat-label">Messages</div>
+                <div class="stat-subtext">Estimated total</div>
+            </div>
+            
+            <div class="stat-card animate-card" 
+                 onclick="showToast('Active for {{ days_active|default:1 }} days! 📅')"
+                 style="animation-delay: 0.4s;">
+                <span class="stat-icon">📊</span>
+                <div class="stat-number days">{{ days_active|default:1 }}</div>
+                <div class="stat-label">Days Active</div>
+                <div class="stat-subtext">Since joining</div>
+            </div>
+        </div>
+        
+        <!-- Activity Summary -->
+        <div class="activity-summary">
+            <h3>
+                📊 Activity Overview
+            </h3>
+            <div class="activity-grid">
+                <div class="activity-item">
+                    <div class="activity-label">
+                        <span>🕒</span>
+                        Last Activity
+                    </div>
+                    <div class="activity-value">
+                        {% if user.last_login %}
+                            {{ user.last_login|timesince }} ago
+                        {% else %}
+                            Never logged in
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="activity-item">
+                    <div class="activity-label">
+                        <span>🔒</span>
+                        Account Status
+                    </div>
+                    <div class="activity-value {% if user.is_active %}active{% else %}inactive{% endif %}">
+                        {% if user.is_active %}
+                            <span>✅</span> Active
+                        {% else %}
+                            <span>❌</span> Inactive
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="profile-actions">
+            <a href="{% url 'profile_edit' %}" class="btn btn-primary">
+                <span>✏️</span>
+                Edit Profile
+            </a>
+            
+            <a href="{% url 'create_complaint' %}" class="btn btn-secondary">
+                <span>📋</span>
+                Report Issue
+            </a>
+            
+            <a href="{% url 'rooms' %}" class="btn btn-outline">
+                <span>🚪</span>
+                Browse Rooms
+            </a>
+            
+            <a href="{% url 'friend_list' %}" class="btn btn-outline">
+                <span>👥</span>
+                Manage Friends
+            </a>
+            
+            <a href="/" class="btn btn-outline">
+                <span>🏠</span>
+                Return Home
+            </a>
+            
+            <a href="{% url 'logout' %}" class="btn logout-btn">
+                <span>🚪</span>
+                Logout
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Enhanced toast notification function
+    function showToast(message) {
+        // Remove existing toast
+        const existingToast = document.getElementById('profile-toast');
+        if (existingToast) {
+            existingToast.remove();
+        }
+        
+        // Create new toast
+        const toast = document.createElement('div');
+        toast.id = 'profile-toast';
+        toast.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 20px;">✨</span>
+                <span>${message}</span>
+            </div>
+        `;
+        
+        toast.style.cssText = `
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            padding: 18px 28px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            z-index: 10000;
+            font-weight: 600;
+            font-size: 15px;
+            animation: slideIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+        `;
+        
+        document.body.appendChild(toast);
+        
+        // Auto-remove after 3 seconds
+        setTimeout(() => {
+            toast.style.animation = 'slideOut 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards';
+            setTimeout(() => toast.remove(), 400);
+        }, 3000);
+        
+        // Add animation styles if not present
+        if (!document.querySelector('#toast-animations')) {
+            const style = document.createElement('style');
+            style.id = 'toast-animations';
+            style.textContent = `
+                @keyframes slideIn {
+                    from { 
+                        transform: translateX(100%) translateY(20px); 
+                        opacity: 0; 
+                    }
+                    to { 
+                        transform: translateX(0) translateY(0); 
+                        opacity: 1; 
+                    }
+                }
+                @keyframes slideOut {
+                    from { 
+                        transform: translateX(0) translateY(0); 
+                        opacity: 1; 
+                    }
+                    to { 
+                        transform: translateX(100%) translateY(20px); 
+                        opacity: 0; 
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+    }
+    
+    // Enhanced click effects for stat cards
+    document.addEventListener('DOMContentLoaded', function() {
+        const statCards = document.querySelectorAll('.stat-card');
+        
+        statCards.forEach((card, index) => {
+            // Add animation delay
+            card.style.animationDelay = `${index * 0.1}s`;
+            card.classList.add('animate-card');
+            
+            // Click animation
+            card.addEventListener('click', function() {
+                this.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    this.style.transform = '';
+                }, 200);
+            });
+            
+            // Hover effects
+            card.addEventListener('mouseenter', function() {
+                const icon = this.querySelector('.stat-icon');
+                if (icon) {
+                    icon.style.transform = 'scale(1.1)';
+                    icon.style.transition = 'transform 0.3s ease';
+                }
+            });
+            
+            card.addEventListener('mouseleave', function() {
+                const icon = this.querySelector('.stat-icon');
+                if (icon) {
+                    icon.style.transform = 'scale(1)';
+                }
+            });
+        });
+        
+        // Avatar error handling
+        const avatarImg = document.querySelector('.avatar-large');
+        if (avatarImg) {
+            avatarImg.onerror = function() {
+                const fallback = document.createElement('div');
+                fallback.className = 'avatar-fallback';
+                fallback.textContent = '{{ user.username|first|upper }}';
+                fallback.style.animation = 'fadeInUp 0.5s ease';
+                
+                this.parentElement.innerHTML = '';
+                this.parentElement.appendChild(fallback);
+            };
+        }
+        
+        // Animate elements on scroll
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+        
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+        
+        // Observe cards
+        statCards.forEach(card => observer.observe(card));
+        
+        // Add ripple effect to buttons
+        const buttons = document.querySelectorAll('.btn');
+        buttons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                const ripple = document.createElement('span');
+                const rect = this.getBoundingClientRect();
+                const size = Math.max(rect.width, rect.height);
+                const x = e.clientX - rect.left - size / 2;
+                const y = e.clientY - rect.top - size / 2;
+                
+                ripple.style.cssText = `
+                    position: absolute;
+                    border-radius: 50%;
+                    background: rgba(255, 255, 255, 0.4);
+                    transform: scale(0);
+                    animation: ripple 0.6s ease;
+                    width: ${size}px;
+                    height: ${size}px;
+                    top: ${y}px;
+                    left: ${x}px;
+                    pointer-events: none;
+                `;
+                
+                this.appendChild(ripple);
+                setTimeout(() => ripple.remove(), 600);
+            });
+        });
+        
+        // Add ripple animation
+        if (!document.querySelector('#ripple-animation')) {
+            const style = document.createElement('style');
+            style.id = 'ripple-animation';
+            style.textContent = `
+                @keyframes ripple {
+                    to {
+                        transform: scale(4);
+                        opacity: 0;
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+    });
+    
+    // Enhanced keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        // Ctrl + Alt + E for edit profile
+        if (e.ctrlKey && e.altKey && e.key === 'e') {
+            e.preventDefault();
+            window.location.href = "{% url 'profile_edit' %}";
+        }
+        
+        // Ctrl + Alt + F for friends
+        if (e.ctrlKey && e.altKey && e.key === 'f') {
+            e.preventDefault();
+            window.location.href = "{% url 'friend_list' %}";
+        }
+        
+        // Ctrl + Alt + R for rooms
+        if (e.ctrlKey && e.altKey && e.key === 'r') {
+            e.preventDefault();
+            window.location.href = "{% url 'rooms' %}";
+        }
+        
+        // Escape to go back with confirmation
+        if (e.key === 'Escape') {
+            if (confirm('Return to homepage?')) {
+                window.location.href = '/';
+            }
+        }
+        
+        // Ctrl + S to save (simulate edit profile)
+        if (e.ctrlKey && e.key === 's') {
+            e.preventDefault();
+            const editBtn = document.querySelector('.btn-primary');
+            if (editBtn && editBtn.textContent.includes('Edit')) {
+                editBtn.click();
+            }
+        }
+    });
+    
+    // Add typing effect for description (optional enhancement)
+    function enhanceDescription() {
+        const descriptionCard = document.querySelector('.description-card:not(.empty)');
+        if (descriptionCard && descriptionCard.textContent.length > 100) {
+            // Add a "Read more" feature for long descriptions
+            const text = descriptionCard.innerHTML;
+            const truncated = text.slice(0, 150) + '...';
+            const fullText = text;
+            
+            if (text.length > 150) {
+                descriptionCard.innerHTML = truncated + 
+                    ' <a href="#" class="read-more-link" style="color: #4CAF50; font-weight: 600; cursor: pointer;">Read more</a>';
+                
+                const readMoreLink = descriptionCard.querySelector('.read-more-link');
+                readMoreLink.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    descriptionCard.innerHTML = fullText;
+                });
+            }
+        }
+    }
+    
+    // Initialize description enhancement
+    enhanceDescription();
+</script>
+{% endblock %}

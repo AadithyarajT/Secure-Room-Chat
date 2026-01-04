@@ -1,0 +1,938 @@
+<!-- templates/register.html -->
+{% extends "base.html" %}
+
+{% block title %}Register - SimpleChat{% endblock %}
+
+{% block page_title %}Create Your SimpleChat Account{% endblock %}
+
+{% block extra_css %}
+<style>
+    .register-container {
+        max-width: 500px;
+        margin: 0 auto;
+        padding: 40px 0;
+    }
+    
+    .register-card {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        overflow: hidden;
+        border: 1px solid #e9ecef;
+    }
+    
+    .register-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 40px 30px;
+        text-align: center;
+    }
+    
+    .register-icon {
+        font-size: 64px;
+        margin-bottom: 20px;
+    }
+    
+    .register-title {
+        font-size: 28px;
+        font-weight: bold;
+        margin-bottom: 10px;
+    }
+    
+    .register-subtitle {
+        font-size: 16px;
+        opacity: 0.9;
+    }
+    
+    .register-body {
+        padding: 40px;
+    }
+    
+    .register-form .form-group {
+        margin-bottom: 25px;
+    }
+    
+    .form-label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #2c3e50;
+        font-size: 15px;
+    }
+    
+    .form-input {
+        width: 100%;
+        padding: 14px 16px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 16px;
+        transition: all 0.3s;
+        background: #f8f9fa;
+    }
+    
+    .form-input:focus {
+        border-color: #4CAF50;
+        background: white;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+    }
+    
+    .form-input.error {
+        border-color: #e74c3c;
+        background: #fff5f5;
+    }
+    
+    .form-input.success {
+        border-color: #2ecc71;
+        background: #f8fff9;
+    }
+    
+    .error-message {
+        color: #e74c3c;
+        font-size: 13px;
+        margin-top: 5px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    
+    .success-message {
+        color: #2ecc71;
+        font-size: 13px;
+        margin-top: 5px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    
+    .password-strength {
+        margin-top: 5px;
+        height: 5px;
+        border-radius: 3px;
+        background: #e0e0e0;
+        overflow: hidden;
+    }
+    
+    .strength-bar {
+        height: 100%;
+        width: 0%;
+        transition: width 0.3s, background 0.3s;
+    }
+    
+    .strength-weak { 
+        width: 33%; 
+        background: #e74c3c; 
+    }
+    
+    .strength-medium { 
+        width: 66%; 
+        background: #f39c12; 
+    }
+    
+    .strength-strong { 
+        width: 100%; 
+        background: #2ecc71; 
+    }
+    
+    .strength-text {
+        font-size: 12px;
+        color: #6c757d;
+        margin-top: 3px;
+        text-align: right;
+    }
+    
+    .register-btn {
+        width: 100%;
+        padding: 16px;
+        background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s;
+        margin-top: 10px;
+    }
+    
+    .register-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3);
+    }
+    
+    .register-btn:active {
+        transform: translateY(0);
+    }
+    
+    .register-footer {
+        text-align: center;
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid #e9ecef;
+    }
+    
+    .register-footer a {
+        color: #4CAF50;
+        text-decoration: none;
+        font-weight: 600;
+        margin: 0 5px;
+    }
+    
+    .register-footer a:hover {
+        text-decoration: underline;
+    }
+    
+    .terms-agreement {
+        margin: 25px 0;
+        padding: 20px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        font-size: 14px;
+        color: #495057;
+    }
+    
+    .terms-checkbox {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        margin-bottom: 15px;
+        cursor: pointer;
+    }
+    
+    .terms-checkbox input {
+        margin-top: 3px;
+        cursor: pointer;
+    }
+    
+    .terms-text {
+        font-size: 13px;
+        line-height: 1.5;
+    }
+    
+    .terms-text a {
+        color: #3498db;
+        text-decoration: none;
+    }
+    
+    .terms-text a:hover {
+        text-decoration: underline;
+    }
+    
+    .password-container {
+        position: relative;
+    }
+    
+    .toggle-password {
+        position: absolute;
+        right: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        color: #6c757d;
+        cursor: pointer;
+        font-size: 18px;
+    }
+    
+    .password-requirements {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 15px;
+        margin-top: 10px;
+        font-size: 13px;
+        color: #495057;
+    }
+    
+    .requirement {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 5px;
+    }
+    
+    .requirement.met {
+        color: #2ecc71;
+    }
+    
+    .requirement.unmet {
+        color: #6c757d;
+    }
+    
+    .requirement-icon {
+        font-size: 14px;
+    }
+    
+    .username-check {
+        position: absolute;
+        right: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 18px;
+    }
+    
+    .username-available {
+        color: #2ecc71;
+    }
+    
+    .username-taken {
+        color: #e74c3c;
+    }
+    
+    .username-loading {
+        color: #3498db;
+        animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+        0% { transform: translateY(-50%) rotate(0deg); }
+        100% { transform: translateY(-50%) rotate(360deg); }
+    }
+    
+    .loading {
+        animation: pulse 1.5s infinite;
+    }
+    
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
+    }
+    
+    .features-list {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 25px;
+        margin-top: 30px;
+    }
+    
+    .features-list h4 {
+        color: #2c3e50;
+        margin-bottom: 15px;
+        font-size: 16px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .features-list ul {
+        list-style: none;
+        padding-left: 0;
+    }
+    
+    .features-list li {
+        padding: 8px 0;
+        color: #495057;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .features-list li:before {
+        content: '✓';
+        color: #4CAF50;
+        font-weight: bold;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .register-container {
+            padding: 20px;
+        }
+        
+        .register-body {
+            padding: 30px 20px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="register-container">
+    <div class="register-card">
+        <div class="register-header">
+            <div class="register-icon">🚀</div>
+            <div class="register-title">Join SimpleChat</div>
+            <div class="register-subtitle">Create your account in seconds</div>
+        </div>
+        
+        <div class="register-body">
+            <!-- Display form errors -->
+            {% if form.errors %}
+            <div style="background: #ffeaea; color: #e74c3c; padding: 15px; border-radius: 8px; margin-bottom: 25px; border-left: 4px solid #e74c3c;">
+                <div style="font-weight: bold; margin-bottom: 5px;">⚠️ Registration Failed</div>
+                <div style="font-size: 14px;">
+                    {% for field in form %}
+                        {% if field.errors %}
+                            {{ field.errors.0 }}
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            
+            <form method="post" class="register-form" id="register-form">
+                {% csrf_token %}
+                
+                <div class="form-group">
+                    <label class="form-label" for="id_username">
+                        <span>👤</span> Choose a Username
+                    </label>
+                    <div style="position: relative;">
+                        <input type="text" 
+                               name="username" 
+                               id="id_username" 
+                               class="form-input {% if form.username.errors %}error{% endif %}" 
+                               placeholder="Enter your desired username"
+                               value="{{ form.username.value|default:'' }}"
+                               required
+                               minlength="3"
+                               maxlength="150"
+                               autocomplete="username"
+                               autofocus>
+                        <span class="username-check" id="username-check"></span>
+                    </div>
+                    {% if form.username.errors %}
+                    <div class="error-message">
+                        <span>⚠️</span> {{ form.username.errors.0 }}
+                    </div>
+                    {% endif %}
+                    <div class="success-message" id="username-success" style="display: none;">
+                        <span>✅</span> Username is available!
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="id_password1">
+                        <span>🔒</span> Create Password
+                    </label>
+                    <div class="password-container">
+                        <input type="password" 
+                               name="password1" 
+                               id="id_password1" 
+                               class="form-input {% if form.password1.errors %}error{% endif %}" 
+                               placeholder="Create a strong password"
+                               required
+                               minlength="8"
+                               autocomplete="new-password">
+                        <button type="button" class="toggle-password" onclick="togglePassword('id_password1')">
+                            👁️
+                        </button>
+                    </div>
+                    <div class="password-strength">
+                        <div class="strength-bar" id="password-strength"></div>
+                    </div>
+                    <div class="strength-text" id="strength-text">Password strength: None</div>
+                    {% if form.password1.errors %}
+                    <div class="error-message">
+                        <span>⚠️</span> {{ form.password1.errors.0 }}
+                    </div>
+                    {% endif %}
+                    
+                    <div class="password-requirements">
+                        <div class="requirement" id="req-length">
+                            <span class="requirement-icon">○</span>
+                            <span>At least 8 characters</span>
+                        </div>
+                        <div class="requirement" id="req-uppercase">
+                            <span class="requirement-icon">○</span>
+                            <span>One uppercase letter</span>
+                        </div>
+                        <div class="requirement" id="req-lowercase">
+                            <span class="requirement-icon">○</span>
+                            <span>One lowercase letter</span>
+                        </div>
+                        <div class="requirement" id="req-number">
+                            <span class="requirement-icon">○</span>
+                            <span>One number</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="id_password2">
+                        <span>🔒</span> Confirm Password
+                    </label>
+                    <div class="password-container">
+                        <input type="password" 
+                               name="password2" 
+                               id="id_password2" 
+                               class="form-input {% if form.password2.errors %}error{% endif %}" 
+                               placeholder="Re-enter your password"
+                               required
+                               minlength="8"
+                               autocomplete="new-password">
+                        <button type="button" class="toggle-password" onclick="togglePassword('id_password2')">
+                            👁️
+                        </button>
+                    </div>
+                    {% if form.password2.errors %}
+                    <div class="error-message">
+                        <span>⚠️</span> {{ form.password2.errors.0 }}
+                    </div>
+                    {% endif %}
+                    <div class="success-message" id="password-match" style="display: none;">
+                        <span>✅</span> Passwords match!
+                    </div>
+                    <div class="error-message" id="password-mismatch" style="display: none;">
+                        <span>⚠️</span> Passwords don't match
+                    </div>
+                </div>
+                
+                <div class="terms-agreement">
+                    <label class="terms-checkbox">
+                        <input type="checkbox" 
+                               name="terms" 
+                               id="terms-checkbox"
+                               required>
+                        <div class="terms-text">
+                            I agree to the <a href="#" onclick="showTerms()">Terms of Service</a> and <a href="#" onclick="showPrivacy()">Privacy Policy</a>. I understand that SimpleChat stores chats temporarily and respects user privacy.
+                        </div>
+                    </label>
+                </div>
+                
+                <button type="submit" class="register-btn" id="register-button">
+                    <span>🚀 Create My Account</span>
+                </button>
+            </form>
+            
+            <div class="register-footer">
+                <span style="color: #6c757d;">Already have an account?</span>
+                <a href="{% url 'login' %}">Login here</a>
+                <span style="color: #6c757d;">|</span>
+                <a href="{% url 'index' %}">Back to Home</a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Registration Benefits -->
+    <div class="features-list">
+        <h4><span>✨</span> Why Register with SimpleChat?</h4>
+        <ul>
+            <li><strong>Profile & Avatars:</strong> Choose from 5 unique avatars to represent you</li>
+            <li><strong>Friend System:</strong> Add friends and chat privately</li>
+            <li><strong>Room Creation:</strong> Create public or private chat rooms</li>
+            <li><strong>Privacy First:</strong> No email required, chats are temporary</li>
+            <li><strong>Notifications:</strong> Get notified about friend requests</li>
+            <li><strong>Chat History:</strong> Access your recent conversations</li>
+            <li><strong>No Ads:</strong> Enjoy an ad-free chatting experience</li>
+            <li><strong>Cross-Platform:</strong> Access from any device</li>
+        </ul>
+    </div>
+</div>
+
+<script>
+    // Toggle password visibility
+    function togglePassword(fieldId) {
+        const passwordInput = document.getElementById(fieldId);
+        const toggleButton = passwordInput.nextElementSibling;
+        
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            toggleButton.innerHTML = '🙈';
+        } else {
+            passwordInput.type = 'password';
+            toggleButton.innerHTML = '👁️';
+        }
+    }
+    
+    // Check username availability
+    let usernameTimeout;
+    document.getElementById('id_username').addEventListener('input', function() {
+        clearTimeout(usernameTimeout);
+        const username = this.value.trim();
+        const checkIcon = document.getElementById('username-check');
+        const successMsg = document.getElementById('username-success');
+        
+        // Reset
+        checkIcon.className = 'username-check';
+        checkIcon.innerHTML = '';
+        successMsg.style.display = 'none';
+        
+        if (username.length < 3) {
+            return;
+        }
+        
+        // Show loading
+        checkIcon.className = 'username-check username-loading';
+        checkIcon.innerHTML = '🔄';
+        
+        // Debounce the check
+        usernameTimeout = setTimeout(async () => {
+            try {
+                // Check if username exists (simulated - in real app, call API)
+                // For now, we'll simulate checking common usernames
+                const reservedUsernames = ['admin', 'root', 'system', 'moderator', 'guest', 'anonymous'];
+                
+                // Simulate API delay
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                if (reservedUsernames.includes(username.toLowerCase())) {
+                    checkIcon.className = 'username-check username-taken';
+                    checkIcon.innerHTML = '❌';
+                    this.classList.add('error');
+                    this.classList.remove('success');
+                } else if (username.length >= 3) {
+                    checkIcon.className = 'username-check username-available';
+                    checkIcon.innerHTML = '✅';
+                    this.classList.add('success');
+                    this.classList.remove('error');
+                    successMsg.style.display = 'flex';
+                }
+            } catch (error) {
+                console.error('Username check failed:', error);
+                checkIcon.className = 'username-check';
+                checkIcon.innerHTML = '';
+            }
+        }, 300);
+    });
+    
+    // Check password strength
+    document.getElementById('id_password1').addEventListener('input', function() {
+        const password = this.value;
+        const strengthBar = document.getElementById('password-strength');
+        const strengthText = document.getElementById('strength-text');
+        const requirements = {
+            length: document.getElementById('req-length'),
+            uppercase: document.getElementById('req-uppercase'),
+            lowercase: document.getElementById('req-lowercase'),
+            number: document.getElementById('req-number')
+        };
+        
+        // Reset
+        strengthBar.className = 'strength-bar';
+        strengthText.textContent = 'Password strength: None';
+        
+        let score = 0;
+        const requirementsMet = {
+            length: password.length >= 8,
+            uppercase: /[A-Z]/.test(password),
+            lowercase: /[a-z]/.test(password),
+            number: /\d/.test(password)
+        };
+        
+        // Update requirement indicators
+        for (const [req, met] of Object.entries(requirementsMet)) {
+            requirements[req].className = `requirement ${met ? 'met' : 'unmet'}`;
+            requirements[req].querySelector('.requirement-icon').textContent = met ? '✓' : '○';
+            if (met) score++;
+        }
+        
+        // Calculate strength
+        let strength = 'None';
+        let strengthClass = '';
+        
+        if (score >= 4) {
+            strength = 'Strong';
+            strengthClass = 'strength-strong';
+        } else if (score >= 2) {
+            strength = 'Medium';
+            strengthClass = 'strength-medium';
+        } else if (score >= 1) {
+            strength = 'Weak';
+            strengthClass = 'strength-weak';
+        }
+        
+        // Update display
+        strengthBar.className = `strength-bar ${strengthClass}`;
+        strengthText.textContent = `Password strength: ${strength}`;
+        
+        // Update input styling
+        if (score >= 4) {
+            this.classList.add('success');
+            this.classList.remove('error');
+        } else if (password.length > 0) {
+            this.classList.add('error');
+            this.classList.remove('success');
+        } else {
+            this.classList.remove('error', 'success');
+        }
+    });
+    
+    // Check password match
+    document.getElementById('id_password2').addEventListener('input', function() {
+        const password1 = document.getElementById('id_password1').value;
+        const password2 = this.value;
+        const matchMsg = document.getElementById('password-match');
+        const mismatchMsg = document.getElementById('password-mismatch');
+        
+        if (password2.length === 0) {
+            matchMsg.style.display = 'none';
+            mismatchMsg.style.display = 'none';
+            this.classList.remove('error', 'success');
+            return;
+        }
+        
+        if (password1 === password2 && password1.length >= 8) {
+            matchMsg.style.display = 'flex';
+            mismatchMsg.style.display = 'none';
+            this.classList.add('success');
+            this.classList.remove('error');
+        } else {
+            matchMsg.style.display = 'none';
+            mismatchMsg.style.display = 'flex';
+            this.classList.add('error');
+            this.classList.remove('success');
+        }
+    });
+    
+    // Show terms modal (placeholder)
+    function showTerms() {
+        alert('Terms of Service\n\n1. All chats are temporary and automatically deleted\n2. No personal information is stored\n3. Users are responsible for their content\n4. Be respectful to other users\n5. Report any abusive behavior\n\nBy using SimpleChat, you agree to these terms.');
+    }
+    
+    // Show privacy policy (placeholder)
+    function showPrivacy() {
+        alert('Privacy Policy\n\n• No email address required\n• Usernames are the only stored user data\n• Chat messages are temporary\n• Media files are deleted after viewing\n• No tracking or analytics\n• Your privacy is our priority\n\nSimpleChat is designed with privacy as the core feature.');
+    }
+    
+    // Form validation and submission
+    document.getElementById('register-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const username = document.getElementById('id_username').value.trim();
+        const password1 = document.getElementById('id_password1').value;
+        const password2 = document.getElementById('id_password2').value;
+        const termsChecked = document.getElementById('terms-checkbox').checked;
+        const registerBtn = document.getElementById('register-button');
+        
+        let isValid = true;
+        let errorMessage = '';
+        
+        // Validate username
+        if (username.length < 4) {
+            isValid = false;
+            errorMessage = 'Username must be at least 3 characters long.';
+        } else if (username.length > 150) {
+            isValid = false;
+            errorMessage = 'Username must be less than 150 characters.';
+        }
+        
+        // Validate password
+        if (password1.length < 8) {
+            isValid = false;
+            errorMessage = 'Password must be at least 8 characters long.';
+        } else if (password1 !== password2) {
+            isValid = false;
+            errorMessage = 'Passwords do not match.';
+        }
+        
+        // Validate terms
+        if (!termsChecked) {
+            isValid = false;
+            errorMessage = 'You must agree to the Terms of Service.';
+        }
+        
+        // Check password strength
+        const passwordScore = calculatePasswordScore(password1);
+        if (passwordScore < 2) {
+            isValid = false;
+            errorMessage = 'Please choose a stronger password. Include uppercase, lowercase, and numbers.';
+        }
+        
+        if (!isValid) {
+            alert('⚠️ Registration Error: ' + errorMessage);
+            return false;
+        }
+        
+        // Show loading state
+        const originalText = registerBtn.innerHTML;
+        registerBtn.innerHTML = '⏳ Creating Account...';
+        registerBtn.disabled = true;
+        registerBtn.classList.add('loading');
+        
+        // Generate a fun welcome message
+        const welcomeMessages = [
+            `Welcome aboard, ${username}! 🎉`,
+            `Get ready to chat, ${username}! 🚀`,
+            `Account created successfully! 🎊`,
+            `Let the conversations begin! 💬`
+        ];
+        
+        const welcomeMessage = welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)];
+        
+        // Simulate processing delay
+        setTimeout(() => {
+            // Submit the form
+            this.submit();
+            
+            // Keep loading state for a bit longer
+            setTimeout(() => {
+                registerBtn.innerHTML = originalText;
+                registerBtn.disabled = false;
+                registerBtn.classList.remove('loading');
+            }, 2000);
+        }, 1500);
+        
+        return true;
+    });
+    
+    function calculatePasswordScore(password) {
+        let score = 0;
+        if (password.length >= 8) score++;
+        if (/[A-Z]/.test(password)) score++;
+        if (/[a-z]/.test(password)) score++;
+        if (/\d/.test(password)) score++;
+        if (/[^A-Za-z0-9]/.test(password)) score++;
+        return score;
+    }
+    
+    // Auto-focus on username field
+    document.addEventListener('DOMContentLoaded', function() {
+        const usernameField = document.getElementById('id_username');
+        if (usernameField) {
+            usernameField.focus();
+            
+            // Auto-generate a fun username suggestion
+            setTimeout(() => {
+                if (!usernameField.value) {
+                    const suggestions = [
+                        'ChatMaster', 'MessageNinja', 'Talkative', 'ChatterBox',
+                        'Conversationist', 'DigitalFriend', 'ChatBuddy', 'TalkTime'
+                    ];
+                    const suggestion = suggestions[Math.floor(Math.random() * suggestions.length)];
+                    usernameField.placeholder = `e.g., ${suggestion}`;
+                }
+            }, 1000);
+        }
+        
+        // Generate a strong password suggestion
+        const generatePasswordBtn = document.createElement('button');
+        generatePasswordBtn.type = 'button';
+        generatePasswordBtn.textContent = '🎲 Generate Strong Password';
+        generatePasswordBtn.style.cssText = `
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-top: 5px;
+            display: block;
+            width: 100%;
+        `;
+        generatePasswordBtn.onclick = generateStrongPassword;
+        
+        const password1Container = document.getElementById('id_password1').parentElement;
+        password1Container.parentNode.insertBefore(generatePasswordBtn, password1Container.nextSibling);
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            // Ctrl/Cmd + Enter to submit form
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                document.getElementById('register-form').submit();
+            }
+            
+            // Escape to clear form
+            if (e.key === 'Escape') {
+                if (confirm('Clear all form fields?')) {
+                    document.getElementById('register-form').reset();
+                    document.getElementById('id_username').focus();
+                    
+                    // Reset all indicators
+                    document.getElementById('username-check').innerHTML = '';
+                    document.getElementById('username-success').style.display = 'none';
+                    document.getElementById('password-strength').className = 'strength-bar';
+                    document.getElementById('strength-text').textContent = 'Password strength: None';
+                    document.getElementById('password-match').style.display = 'none';
+                    document.getElementById('password-mismatch').style.display = 'none';
+                    
+                    const requirements = document.querySelectorAll('.requirement');
+                    requirements.forEach(req => {
+                        req.className = 'requirement';
+                        req.querySelector('.requirement-icon').textContent = '○';
+                    });
+                }
+            }
+        });
+    });
+    
+    function generateStrongPassword() {
+        const chars = {
+            uppercase: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+            lowercase: 'abcdefghijklmnopqrstuvwxyz',
+            numbers: '0123456789',
+            symbols: '!@#$%&*'
+        };
+        
+        let password = '';
+        
+        // Ensure at least one of each type
+        password += chars.uppercase[Math.floor(Math.random() * chars.uppercase.length)];
+        password += chars.lowercase[Math.floor(Math.random() * chars.lowercase.length)];
+        password += chars.numbers[Math.floor(Math.random() * chars.numbers.length)];
+        password += chars.symbols[Math.floor(Math.random() * chars.symbols.length)];
+        
+        // Add more random characters to reach 12 characters
+        const allChars = chars.uppercase + chars.lowercase + chars.numbers + chars.symbols;
+        for (let i = password.length; i < 12; i++) {
+            password += allChars[Math.floor(Math.random() * allChars.length)];
+        }
+        
+        // Shuffle the password
+        password = password.split('').sort(() => Math.random() - 0.5).join('');
+        
+        // Set the password fields
+        document.getElementById('id_password1').value = password;
+        document.getElementById('id_password2').value = password;
+        
+        // Trigger events to update UI
+        document.getElementById('id_password1').dispatchEvent(new Event('input'));
+        document.getElementById('id_password2').dispatchEvent(new Event('input'));
+        
+        // Show password
+        togglePassword('id_password1');
+        togglePassword('id_password2');
+        
+        // Alert user
+        alert(`Generated password: ${password}\n\n✅ Strong password generated!\n📋 Copied to clipboard.`);
+        
+        // Copy to clipboard
+        navigator.clipboard.writeText(password);
+    }
+    
+    // Demo account registration (for development)
+    function registerDemoAccount() {
+        const demoUsername = `DemoUser${Math.floor(Math.random() * 1000)}`;
+        const demoPassword = 'Demo123!';
+        
+        document.getElementById('id_username').value = demoUsername;
+        document.getElementById('id_password1').value = demoPassword;
+        document.getElementById('id_password2').value = demoPassword;
+        document.getElementById('terms-checkbox').checked = true;
+        
+        // Trigger events
+        document.getElementById('id_username').dispatchEvent(new Event('input'));
+        document.getElementById('id_password1').dispatchEvent(new Event('input'));
+        document.getElementById('id_password2').dispatchEvent(new Event('input'));
+        
+        alert(`Demo account created!\n\nUsername: ${demoUsername}\nPassword: ${demoPassword}\n\nClick "Create My Account" to register.`);
+    }
+    
+    // Add demo button for development
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        const demoBtn = document.createElement('button');
+        demoBtn.type = 'button';
+        demoBtn.textContent = '🎭 Create Demo Account';
+        demoBtn.onclick = registerDemoAccount;
+        demoBtn.style.cssText = `
+            background: #9b59b6;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-top: 15px;
+            width: 100%;
+        `;
+        
+        const registerFooter = document.querySelector('.register-footer');
+        if (registerFooter) {
+            registerFooter.parentNode.insertBefore(demoBtn, registerFooter);
+        }
+    }
+</script>
+{% endblock %}

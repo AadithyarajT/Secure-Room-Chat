@@ -1,0 +1,459 @@
+{% extends "base.html" %}
+
+{% block title %}My Reports - SimpleChat{% endblock %}
+
+{% block extra_css %}
+<style>
+    .complaints-container {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+    
+    .complaint-item {
+        background: white;
+        border-radius: 10px;
+        padding: 25px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        border-left: 4px solid #3498db;
+        transition: transform 0.3s;
+    }
+    
+    .complaint-item:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .complaint-item.pending {
+        border-left-color: #f39c12;
+    }
+    
+    .complaint-item.resolved {
+        border-left-color: #2ecc71;
+    }
+    
+    .complaint-item.rejected {
+        border-left-color: #e74c3c;
+    }
+    
+    .complaint-item.in_review {
+        border-left-color: #3498db;
+    }
+    
+    .complaint-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #e9ecef;
+    }
+    
+    .complaint-title {
+        font-size: 18px;
+        font-weight: bold;
+        color: #2c3e50;
+        margin: 0;
+    }
+    
+    .complaint-meta {
+        display: flex;
+        gap: 15px;
+        font-size: 14px;
+        color: #6c757d;
+    }
+    
+    .status-badge {
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: bold;
+    }
+    
+    .status-pending {
+        background: #fff3cd;
+        color: #856404;
+    }
+    
+    .status-resolved {
+        background: #d4edda;
+        color: #155724;
+    }
+    
+    .status-rejected {
+        background: #f8d7da;
+        color: #721c24;
+    }
+    
+    .status-in_review {
+        background: #d1ecf1;
+        color: #0c5460;
+    }
+    
+    .complaint-message {
+        color: #495057;
+        line-height: 1.6;
+        margin-bottom: 20px;
+        white-space: pre-wrap;
+    }
+    
+    .admin-reply {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        margin-top: 20px;
+        border-left: 3px solid #4CAF50;
+    }
+    
+    .admin-reply h4 {
+        margin-top: 0;
+        color: #2c3e50;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .admin-reply-content {
+        color: #495057;
+        line-height: 1.6;
+        white-space: pre-wrap;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #6c757d;
+    }
+    
+    .empty-state i {
+        font-size: 64px;
+        margin-bottom: 20px;
+        color: #bdc3c7;
+    }
+    
+    .filter-buttons {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+    }
+    
+    .filter-btn {
+        padding: 8px 16px;
+        background: #f8f9fa;
+        border: 1px solid #ced4da;
+        border-radius: 20px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .filter-btn.active {
+        background: #4CAF50;
+        color: white;
+        border-color: #4CAF50;
+    }
+    
+    .filter-btn:hover:not(.active) {
+        background: #e9ecef;
+    }
+    
+    .admin-actions {
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid #e9ecef;
+    }
+    
+    .reply-form {
+        display: none;
+        margin-top: 20px;
+    }
+    
+    .reply-textarea {
+        width: 100%;
+        min-height: 100px;
+        padding: 12px;
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        font-family: Arial, sans-serif;
+        font-size: 14px;
+        margin-bottom: 10px;
+    }
+    
+    .action-buttons {
+        display: flex;
+        gap: 10px;
+    }
+    
+    .btn {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+    }
+    
+    .btn-primary {
+        background: #3498db;
+        color: white;
+    }
+    
+    .btn-success {
+        background: #2ecc71;
+        color: white;
+    }
+    
+    .btn-warning {
+        background: #f39c12;
+        color: white;
+    }
+    
+    .btn-danger {
+        background: #e74c3c;
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="complaints-container">
+    <h1 style="margin-bottom: 30px;">
+        {% if is_admin %}
+        👑 Admin: All Reports
+        {% else %}
+        📋 My Reports
+        {% endif %}
+    </h1>
+    
+    <!-- Filter buttons -->
+    {% comment %} <div class="filter-buttons">
+        <button class="filter-btn active" onclick="filterComplaints('all')">
+            All ({{ complaints.count }})
+        </button>
+        <button class="filter-btn" onclick="filterComplaints('pending')">
+            Pending ({{ complaints.filter(status='pending').count }})
+        </button>
+        <button class="filter-btn" onclick="filterComplaints('in_review')">
+            In Review ({{ complaints.filter(status='in_review').count }})
+        </button>
+        <button class="filter-btn" onclick="filterComplaints('resolved')">
+            Resolved ({{ complaints.filter(status='resolved').count }})
+        </button>
+        <button class="filter-btn" onclick="filterComplaints('rejected')">
+            Rejected ({{ complaints.filter(status='rejected').count }})
+        </button>
+    </div> {% endcomment %}
+    
+    {% if complaints %}
+        {% for complaint in complaints %}
+        <div class="complaint-item {{ complaint.status }}" id="complaint-{{ complaint.id }}">
+            <div class="complaint-header">
+                <h3 class="complaint-title">{{ complaint.subject }}</h3>
+                <div class="complaint-meta">
+                    <span class="status-badge status-{{ complaint.status }}">
+                        {{ complaint.get_status_display }}
+                    </span>
+                    <span>{{ complaint.created_at|date:"M d, Y H:i" }}</span>
+                    {% if is_admin and complaint.user %}
+                    <span>By: {{ complaint.username }}</span>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="complaint-message">
+                {{ complaint.message|linebreaks }}
+            </div>
+            
+            {% if complaint.email %}
+            <div style="font-size: 14px; color: #6c757d; margin-bottom: 10px;">
+                <strong>Contact:</strong> {{ complaint.email }}
+            </div>
+            {% endif %}
+            
+            {% if complaint.admin_reply %}
+            <div class="admin-reply">
+                <h4>👑 Admin Response</h4>
+                <div class="admin-reply-content">
+                    {{ complaint.admin_reply|linebreaks }}
+                </div>
+                <div style="font-size: 12px; color: #6c757d; margin-top: 10px;">
+                    Last updated: {{ complaint.updated_at|date:"M d, Y H:i" }}
+                </div>
+            </div>
+            {% elif is_admin %}
+            <div class="admin-actions">
+                <button class="btn btn-primary" onclick="showReplyForm('{{ complaint.id }}')">
+                    ✍️ Reply to User
+                </button>
+                
+                <div class="action-buttons" style="margin-top: 10px;">
+                    <button class="btn btn-warning" onclick="updateStatus('{{ complaint.id }}', 'in_review')">
+                        Mark as In Review
+                    </button>
+                    <button class="btn btn-success" onclick="updateStatus('{{ complaint.id }}', 'resolved')">
+                        Mark as Resolved
+                    </button>
+                    <button class="btn btn-danger" onclick="updateStatus('{{ complaint.id }}', 'rejected')">
+                        Reject
+                    </button>
+                </div>
+                
+                <div class="reply-form" id="reply-form-{{ complaint.id }}">
+                    <textarea class="reply-textarea" 
+                              id="reply-text-{{ complaint.id }}" 
+                              placeholder="Type your response to the user..."></textarea>
+                    <div class="action-buttons">
+                        <button class="btn btn-success" onclick="sendReply('{{ complaint.id }}')">
+                            Send Reply
+                        </button>
+                        <button class="btn" onclick="hideReplyForm('{{ complaint.id }}')" 
+                                style="background: #6c757d; color: white;">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="empty-state">
+            <div>📭</div>
+            <h3>No reports found</h3>
+            <p>
+                {% if is_admin %}
+                No users have submitted any reports yet.
+                {% else %}
+                You haven't submitted any reports yet.
+                <br>
+                <a href="{% url 'create_complaint' %}" style="color: #4CAF50;">
+                    Submit your first report
+                </a>
+                {% endif %}
+            </p>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+    // Filter complaints by status
+    function filterComplaints(status) {
+        const complaints = document.querySelectorAll('.complaint-item');
+        const filterButtons = document.querySelectorAll('.filter-btn');
+        
+        // Update active button
+        filterButtons.forEach(btn => {
+            btn.classList.remove('active');
+            if (btn.textContent.includes(status.charAt(0).toUpperCase() + status.slice(1)) || 
+                (status === 'all' && btn.textContent.includes('All'))) {
+                btn.classList.add('active');
+            }
+        });
+        
+        // Show/hide complaints
+        complaints.forEach(complaint => {
+            if (status === 'all' || complaint.classList.contains(status)) {
+                complaint.style.display = 'block';
+            } else {
+                complaint.style.display = 'none';
+            }
+        });
+    }
+    
+    // Show reply form (admin only)
+    function showReplyForm(complaintId) {
+        document.getElementById(`reply-form-${complaintId}`).style.display = 'block';
+    }
+    
+    function hideReplyForm(complaintId) {
+        document.getElementById(`reply-form-${complaintId}`).style.display = 'none';
+    }
+    
+    // Send reply to user (admin only)
+    function sendReply(complaintId) {
+        const replyText = document.getElementById(`reply-text-${complaintId}`).value.trim();
+        
+        if (!replyText) {
+            alert('Please enter a reply message');
+            return;
+        }
+        
+        fetch(`/admin/reply-complaint/${complaintId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                reply: replyText
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                // Reload the page to show the reply
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error sending reply');
+        });
+    }
+    
+    // Update complaint status (admin only)
+    function updateStatus(complaintId, status) {
+        if (!confirm(`Are you sure you want to mark this as "${status}"?`)) {
+            return;
+        }
+        
+        fetch(`/admin/update-complaint-status/${complaintId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                status: status
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                // Reload the page to update status
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error updating status');
+        });
+    }
+    
+    // Highlight specific complaint from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const highlightId = urlParams.get('highlight');
+    
+    if (highlightId) {
+        const complaint = document.getElementById(`complaint-${highlightId}`);
+        if (complaint) {
+            complaint.style.animation = 'pulse 2s';
+            complaint.scrollIntoView({ behavior: 'smooth' });
+            
+            // Add CSS for pulse animation
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes pulse {
+                    0% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7); }
+                    70% { box-shadow: 0 0 0 10px rgba(76, 175, 80, 0); }
+                    100% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,757 @@
+{% extends "base.html" %}
+
+{% block title %}Friends - SimpleChat{% endblock %}
+
+{% block page_title %}Friends Management{% endblock %}
+
+{% block extra_css %}
+<style>
+    .friends-container {
+        display: flex;
+        flex-direction: column;
+        gap: 30px;
+    }
+
+    /* Stats Section */
+    .friends-stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+        margin-bottom: 10px;
+    }
+
+    .stat-item {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        text-align: center;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        border: 1px solid #e9ecef;
+    }
+
+    .stat-number {
+        font-size: 24px;
+        font-weight: bold;
+        color: #2c3e50;
+    }
+
+    .stat-label {
+        font-size: 14px;
+        color: #7f8c8d;
+        text-transform: uppercase;
+        margin-top: 5px;
+    }
+
+    /* Section Headers */
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        border-bottom: 2px solid #f0f0f0;
+        padding-bottom: 10px;
+    }
+
+    .section-title {
+        font-size: 18px;
+        font-weight: bold;
+        color: #2c3e50;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    /* Grid Layouts */
+    .friends-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 25px;
+    }
+
+    /* Friend Card */
+    .friend-card {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        border: 1px solid #e9ecef;
+        transition: transform 0.3s, box-shadow 0.3s;
+    }
+
+    .friend-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    }
+
+    /* Highlight online friends */
+    .friend-card.active-now {
+        border-left: 4px solid #2ecc71;
+        background-color: rgba(46, 204, 113, 0.02);
+    }
+
+    .friend-header {
+        padding: 20px;
+        border-bottom: 1px solid #f0f0f0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    /* Updated: Friend Info Link Style */
+    .friend-info {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        flex: 1;
+        text-decoration: none;
+        color: inherit;
+        transition: opacity 0.2s;
+    }
+
+    .friend-info:hover {
+        opacity: 0.8;
+    }
+
+    .friend-info:hover .friend-name {
+        color: #4CAF50;
+    }
+
+    .friend-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: #f0f0f0;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 20px;
+        flex-shrink: 0;
+        overflow: hidden;
+        position: relative;
+    }
+    
+    /* Online indicator dot on avatar */
+    .friend-avatar::after {
+        content: '';
+        position: absolute;
+        bottom: 2px;
+        right: 2px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        border: 2px solid white;
+        display: none;
+    }
+    
+    .friend-avatar.online::after {
+        display: block;
+        background-color: #2ecc71;
+        box-shadow: 0 0 0 2px rgba(46, 204, 113, 0.3);
+    }
+    
+    .friend-avatar.offline::after {
+        display: block;
+        background-color: #95a5a6;
+    }
+    
+    .friend-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .friend-details {
+        min-width: 0;
+    }
+
+    .friend-name {
+        font-weight: bold;
+        color: #2c3e50;
+        margin-bottom: 4px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        transition: color 0.2s;
+    }
+
+    .friend-status {
+        font-size: 12px;
+        color: #7f8c8d;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0% {
+            box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.7);
+        }
+        70% {
+            box-shadow: 0 0 0 4px rgba(46, 204, 113, 0);
+        }
+        100% {
+            box-shadow: 0 0 0 0 rgba(46, 204, 113, 0);
+        }
+    }
+
+    .status-dot.online {
+        background-color: #2ecc71;
+    }
+
+    .status-dot.offline {
+        background-color: #95a5a6;
+        animation: none;
+    }
+
+    .status-text {
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    .status-text.online {
+        color: #27ae60;
+    }
+
+    .status-text.offline {
+        color: #95a5a6;
+    }
+
+    .friend-time {
+        font-size: 11px;
+        color: #95a5a6;
+        text-align: right;
+        line-height: 1.4;
+    }
+
+    /* Card Actions */
+    .card-actions {
+        padding: 15px 20px;
+        background: #f8f9fa;
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+    }
+
+    .action-btn {
+        flex: 1;
+        padding: 8px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        transition: background 0.2s;
+        text-decoration: none;
+    }
+
+    .btn-message {
+        background: #e8f5e9;
+        color: #4CAF50;
+    }
+    
+    .btn-message:hover {
+        background: #c8e6c9;
+    }
+
+    .btn-remove {
+        background: #ffebee;
+        color: #e74c3c;
+    }
+
+    .btn-remove:hover {
+        background: #ffcdd2;
+    }
+    
+    .btn-accept {
+        background: #4CAF50;
+        color: white;
+    }
+    
+    .btn-accept:hover {
+        background: #45a049;
+    }
+    
+    .btn-reject {
+        background: #e74c3c;
+        color: white;
+    }
+    
+    .btn-reject:hover {
+        background: #c0392b;
+    }
+
+    /* Add Friend Form */
+    .add-friend-form {
+        display: flex;
+        gap: 10px;
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        margin-bottom: 20px;
+    }
+
+    .search-input {
+        flex: 1;
+        padding: 12px 15px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 15px;
+        transition: border-color 0.3s;
+    }
+
+    .search-input:focus {
+        border-color: #4CAF50;
+        outline: none;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 40px;
+        color: #95a5a6;
+        background: white;
+        border-radius: 12px;
+        border: 1px dashed #ced4da;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .friends-stats {
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+        
+        .friends-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .add-friend-form {
+            flex-direction: column;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="friends-container">
+    <!-- Stats Row -->
+    <div class="friends-stats">
+        <div class="stat-item">
+            <div class="stat-number">{{ accepted_friends|length }}</div>
+            <div class="stat-label">Friends</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-number">{{ pending_requests|length }}</div>
+            <div class="stat-label">Requests Received</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-number">{{ sent_requests|length }}</div>
+            <div class="stat-label">Requests Sent</div>
+        </div>
+    </div>
+
+    <!-- Add Friend Section -->
+    <div class="add-friend-form">
+        <input type="text" id="friend-username" class="search-input" placeholder="Enter username to add friend...">
+        <button onclick="sendFriendRequest()" class="action-btn btn-accept" style="flex: 0 0 auto; width: auto; padding: 0 25px;">
+            <i class="fas fa-user-plus"></i> Send Request
+        </button>
+    </div>
+
+    <!-- Pending Requests (Received) -->
+    {% if pending_requests %}
+    <div>
+        <div class="section-header">
+            <div class="section-title">
+                <span style="color: #e67e22;">📩</span> Pending Requests ({{ pending_requests|length }})
+            </div>
+        </div>
+        <div class="friends-grid">
+            {% for req_data in pending_requests %}
+            <div class="friend-card {% if req_data.is_online %}active-now{% endif %}">
+                <div class="friend-header">
+                    <a href="{% url 'public_profile' req_data.sender.username %}" class="friend-info">
+                        <div class="friend-avatar {% if req_data.is_online %}online{% else %}offline{% endif %}">
+                            <img src="/static/avatars/{{ req_data.sender.profile.avatar|default:'avt1.jpg' }}" 
+                                 alt="{{ req_data.sender.username }}"
+                                 data-name="{{ req_data.sender.username }}"
+                                 onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name=' + encodeURIComponent(this.dataset.name) + '&background=random&color=fff&size=128'">
+                        </div>
+                        <div class="friend-details">
+                            <div class="friend-name">{{ req_data.sender.username }}</div>
+                            <div class="friend-status">
+                                <span class="status-dot {% if req_data.is_online %}online{% else %}offline{% endif %}"></span>
+                                <span class="status-text {% if req_data.is_online %}online{% else %}offline{% endif %}">
+                                    {% if req_data.is_online %}
+                                        Active Now
+                                    {% else %}
+                                        {% if req_data.last_seen %}
+                                            Last seen {{ req_data.last_seen|timesince }} ago
+                                        {% else %}
+                                            Offline
+                                        {% endif %}
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                <div class="card-actions">
+                    <button onclick="respondRequest('{{ req_data.request.id }}', 'accept')" class="action-btn btn-accept">
+                        <i class="fas fa-check"></i> Accept
+                    </button>
+                    <button onclick="respondRequest('{{ req_data.request.id }}', 'reject')" class="action-btn btn-reject">
+                        <i class="fas fa-times"></i> Reject
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Sent Requests -->
+    {% if sent_requests %}
+    <div>
+        <div class="section-header">
+            <div class="section-title">
+                <span style="color: #3498db;">📤</span> Sent Requests ({{ sent_requests|length }})
+            </div>
+        </div>
+        <div class="friends-grid">
+            {% for req_data in sent_requests %}
+            <div class="friend-card {% if req_data.is_online %}active-now{% endif %}">
+                <div class="friend-header">
+                    <a href="{% url 'public_profile' req_data.receiver.username %}" class="friend-info">
+                        <div class="friend-avatar {% if req_data.is_online %}online{% else %}offline{% endif %}">
+                            <img src="/static/avatars/{{ req_data.receiver.profile.avatar|default:'avt1.jpg' }}" 
+                                 alt="{{ req_data.receiver.username }}"
+                                 data-name="{{ req_data.receiver.username }}"
+                                 onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name=' + encodeURIComponent(this.dataset.name) + '&background=random&color=fff&size=128'">
+                        </div>
+                        <div class="friend-details">
+                            <div class="friend-name">{{ req_data.receiver.username }}</div>
+                            <div class="friend-status">
+                                <span class="status-dot {% if req_data.is_online %}online{% else %}offline{% endif %}"></span>
+                                <span class="status-text {% if req_data.is_online %}online{% else %}offline{% endif %}">
+                                    {% if req_data.is_online %}
+                                        Active Now
+                                    {% else %}
+                                        {% if req_data.last_seen %}
+                                            Last seen {{ req_data.last_seen|timesince }} ago
+                                        {% else %}
+                                            Offline
+                                        {% endif %}
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                <div class="card-actions">
+                    <button onclick="cancelRequest('{{ req_data.request.id }}')" class="action-btn btn-remove">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Friends List -->
+    <div>
+        <div class="section-header">
+            <div class="section-title">
+                <span style="color: #4CAF50;">👥</span> Your Friends ({{ accepted_friends|length }})
+            </div>
+        </div>
+
+        {% if accepted_friends %}
+        <div class="friends-grid">
+            {% for friend_data in accepted_friends %}
+            <div class="friend-card {% if friend_data.is_online %}active-now{% endif %}">
+                <div class="friend-header">
+                    <a href="{% url 'public_profile' friend_data.friend.username %}" class="friend-info">
+                        <div class="friend-avatar {% if friend_data.is_online %}online{% else %}offline{% endif %}">
+                            <img src="/static/avatars/{{ friend_data.friend_profile.avatar|default:'avt1.jpg' }}" 
+                                 alt="{{ friend_data.friend.username }}"
+                                 data-name="{{ friend_data.friend.username }}"
+                                 onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name=' + encodeURIComponent(this.dataset.name) + '&background=random&color=fff&size=128'">
+                        </div>
+                        <div class="friend-details">
+                            <div class="friend-name">
+                                {{ friend_data.friend.username|truncatechars:20 }}
+                            </div>
+                            <div class="friend-status">
+                                <span class="status-dot {% if friend_data.is_online %}online{% else %}offline{% endif %}"></span>
+                                <span class="status-text {% if friend_data.is_online %}online{% else %}offline{% endif %}">
+                                    {% if friend_data.is_online %}
+                                        Active Now
+                                    {% else %}
+                                        {% if friend_data.last_seen %}
+                                            Last seen {{ friend_data.last_seen|timesince }} ago
+                                        {% else %}
+                                            Offline
+                                        {% endif %}
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                    </a>
+                    <div class="friend-time">
+                        Friend since<br>{{ friend_data.friendship.created_at|date:"M d, Y" }}
+                    </div>
+                </div>
+                <div class="card-actions">
+                    <button onclick="startDirectMessage('{{ friend_data.friend.id }}')" class="action-btn btn-message">
+                        <i class="fas fa-comment"></i> Message
+                    </button>
+                    <button onclick="removeFriend('{{ friend_data.friend.id }}')" class="action-btn btn-remove">
+                        <i class="fas fa-user-minus"></i> Remove
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-user-friends" style="font-size: 48px; margin-bottom: 20px;"></i>
+            <h3>No friends yet</h3>
+            <p>Search for users above to start adding friends!</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function sendFriendRequest() {
+        const username = document.getElementById('friend-username').value.trim();
+        if (!username) {
+            alert('Please enter a username');
+            return;
+        }
+
+        const btn = event.target.closest('button');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+        btn.disabled = true;
+
+        const formData = new FormData();
+        formData.append('username', username);
+
+        fetch('{% url "send_friend_request" %}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                location.reload();
+            } else {
+                alert(data.message);
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred. Please try again.');
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        });
+    }
+
+    function respondRequest(requestId, action) {
+        const confirmMessage = action === 'accept' 
+            ? 'Accept this friend request?' 
+            : 'Reject this friend request?';
+        
+        if (!confirm(confirmMessage)) return;
+
+        const formData = new FormData();
+        formData.append('request_id', requestId);
+        formData.append('action', action);
+
+        fetch('{% url "respond_friend_request" %}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                location.reload();
+            } else {
+                alert(data.message || 'An error occurred.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred. Please try again.');
+        });
+    }
+
+    function removeFriend(friendId) {
+        if (!confirm('Are you sure you want to remove this friend?')) return;
+
+        const formData = new FormData();
+        formData.append('friend_id', friendId);
+
+        fetch('{% url "remove_friend" %}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                location.reload();
+            } else {
+                alert(data.message || 'An error occurred.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred. Please try again.');
+        });
+    }
+
+    function cancelRequest(requestId) {
+        if (!confirm('Cancel this friend request?')) return;
+
+        const formData = new FormData();
+        formData.append('request_id', requestId);
+
+        fetch('{% url "cancel_friend_request" %}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                location.reload();
+            } else {
+                alert(data.message || 'An error occurred.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred. Please try again.');
+        });
+    }
+
+    function startDirectMessage(friendId) {
+        const btn = event.currentTarget;
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        btn.disabled = true;
+
+        fetch('{% url "create_dm_room" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                friend_id: friendId
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.href = data.redirect_url;
+            } else {
+                alert('Error: ' + data.error);
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred. Please try again.');
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        });
+    }
+
+    // Real-time status updates (optional)
+    function updateFriendStatuses() {
+        fetch('{% url "check_online_status" %}', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update status indicators based on online users
+                data.online_users.forEach(userId => {
+                    // Find all elements for this user and update status
+                    const elements = document.querySelectorAll(`[data-user-id="${userId}"]`);
+                    elements.forEach(el => {
+                        const statusDot = el.querySelector('.status-dot');
+                        const statusText = el.querySelector('.status-text');
+                        const avatar = el.querySelector('.friend-avatar');
+                        const card = el.closest('.friend-card');
+                        
+                        if (statusDot) {
+                            statusDot.classList.remove('offline');
+                            statusDot.classList.add('online');
+                        }
+                        if (statusText) {
+                            statusText.classList.remove('offline');
+                            statusText.classList.add('online');
+                            statusText.textContent = 'Active Now';
+                        }
+                        if (avatar) {
+                            avatar.classList.remove('offline');
+                            avatar.classList.add('online');
+                        }
+                        if (card) {
+                            card.classList.add('active-now');
+                        }
+                    });
+                });
+            }
+        })
+        .catch(error => console.error('Error updating status:', error));
+    }
+
+    // Update status every 30 seconds if on friends page
+    if (window.location.pathname.includes('/friends')) {
+        // Initial update after 2 seconds
+        setTimeout(updateFriendStatuses, 2000);
+        
+        // Update every 30 seconds
+        setInterval(updateFriendStatuses, 30000);
+    }
+</script>
+{% endblock %}

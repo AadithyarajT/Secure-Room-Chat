@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Access Denied - SimpleChat</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+        
+        .error-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            color: #e74c3c;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+        
+        .error-message {
+            color: #666;
+            font-size: 18px;
+            margin-bottom: 30px;
+            line-height: 1.5;
+        }
+        
+        .room-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            text-align: left;
+        }
+        
+        .room-info h3 {
+            margin-top: 0;
+            color: #495057;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 12px 30px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 500;
+            margin: 5px;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        .btn:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        
+        .action-buttons {
+            margin-top: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+                margin: 5px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="error-icon">🚫</div>
+        <h1>Access Denied</h1>
+        
+        <div class="error-message">
+            {{ error }}
+        </div>
+        
+        <div class="room-info">
+            <h3>Room Details:</h3>
+            <p><strong>Name:</strong> {{ room.name|default:"Unnamed Room" }}</p>
+            <p><strong>Type:</strong> {{ room.get_room_type_display }}</p>
+            <p><strong>Status:</strong> {% if room.is_closed %}Closed{% else %}Active{% endif %}</p>
+            <p><strong>Created:</strong> {{ room.created_at|date:"F j, Y g:i A" }}</p>
+        </div>
+        
+        <div class="action-buttons">
+            {% if is_private and not room.is_closed %}
+            <a href="{% if room.short_code %}/chat/{{ room.short_code }}/{% else %}/chat/{{ room.id }}/{% endif %}" class="btn">
+                🔐 Try Again with Password
+            </a>
+            {% endif %}
+            
+            <a href="/" class="btn btn-secondary">🏠 Go to Home</a>
+            <a href="/rooms/" class="btn">💬 Browse Rooms</a>
+            
+            {% if request.user.is_authenticated %}
+            <a href="/friends/" class="btn">👥 Friends</a>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

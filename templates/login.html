@@ -1,0 +1,685 @@
+<!-- templates/login.html -->
+{% extends "base.html" %}
+
+{% block title %}Login - SimpleChat{% endblock %}
+
+{% block page_title %}Login to SimpleChat{% endblock %}
+
+{% block extra_css %}
+<style>
+    .login-container {
+        max-width: 500px;
+        margin: 0 auto;
+        padding: 40px 0;
+    }
+    
+    .login-card {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        overflow: hidden;
+        border: 1px solid #e9ecef;
+    }
+    
+    .login-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 40px 30px;
+        text-align: center;
+    }
+    
+    .login-icon {
+        font-size: 64px;
+        margin-bottom: 20px;
+    }
+    
+    .login-title {
+        font-size: 28px;
+        font-weight: bold;
+        margin-bottom: 10px;
+    }
+    
+    .login-subtitle {
+        font-size: 16px;
+        opacity: 0.9;
+    }
+    
+    .login-body {
+        padding: 40px;
+    }
+    
+    .login-form .form-group {
+        margin-bottom: 25px;
+    }
+    
+    .form-label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #2c3e50;
+        font-size: 15px;
+    }
+    
+    .form-input {
+        width: 100%;
+        padding: 14px 16px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 16px;
+        transition: all 0.3s;
+        background: #f8f9fa;
+    }
+    
+    .form-input:focus {
+        border-color: #4CAF50;
+        background: white;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+    }
+    
+    .form-input.error {
+        border-color: #e74c3c;
+        background: #fff5f5;
+    }
+    
+    .error-message {
+        color: #e74c3c;
+        font-size: 13px;
+        margin-top: 5px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    
+    .login-btn {
+        width: 100%;
+        padding: 16px;
+        background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s;
+        margin-top: 10px;
+    }
+    
+    .login-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3);
+    }
+    
+    .login-btn:active {
+        transform: translateY(0);
+    }
+    
+    .login-footer {
+        text-align: center;
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid #e9ecef;
+    }
+    
+    .login-footer a {
+        color: #4CAF50;
+        text-decoration: none;
+        font-weight: 600;
+        margin: 0 5px;
+    }
+    
+    .login-footer a:hover {
+        text-decoration: underline;
+    }
+    
+    .form-options {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+        font-size: 14px;
+    }
+    
+    .remember-me {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+    }
+    
+    .remember-checkbox {
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+    }
+    
+    .forgot-password {
+        color: #3498db;
+        text-decoration: none;
+    }
+    
+    .forgot-password:hover {
+        text-decoration: underline;
+    }
+    
+    .guest-login {
+        text-align: center;
+        margin-top: 20px;
+    }
+    
+    .guest-btn {
+        background: #6c757d;
+        color: white;
+        border: none;
+        padding: 12px 25px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        text-decoration: none;
+        display: inline-block;
+        transition: all 0.3s;
+    }
+    
+    .guest-btn:hover {
+        background: #5a6268;
+        text-decoration: none;
+    }
+    
+    .social-login {
+        margin-top: 30px;
+        padding-top: 25px;
+        border-top: 1px solid #e9ecef;
+    }
+    
+    .social-title {
+        text-align: center;
+        color: #6c757d;
+        font-size: 14px;
+        margin-bottom: 20px;
+        position: relative;
+    }
+    
+    .social-title:before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 50%;
+        width: 30%;
+        height: 1px;
+        background: #e9ecef;
+    }
+    
+    .social-title:after {
+        content: '';
+        position: absolute;
+        right: 0;
+        top: 50%;
+        width: 30%;
+        height: 1px;
+        background: #e9ecef;
+    }
+    
+    .social-buttons {
+        display: flex;
+        gap: 15px;
+    }
+    
+    .social-btn {
+        flex: 1;
+        padding: 12px;
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        background: white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+    
+    .social-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .social-btn.google {
+        color: #DB4437;
+        border-color: #DB4437;
+    }
+    
+    .social-btn.github {
+        color: #333;
+        border-color: #333;
+    }
+    
+    .features-list {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 25px;
+        margin-top: 30px;
+    }
+    
+    .features-list h4 {
+        color: #2c3e50;
+        margin-bottom: 15px;
+        font-size: 16px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .features-list ul {
+        list-style: none;
+        padding-left: 0;
+    }
+    
+    .features-list li {
+        padding: 8px 0;
+        color: #495057;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .features-list li:before {
+        content: '✓';
+        color: #4CAF50;
+        font-weight: bold;
+    }
+    
+    /* Loading animation */
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
+    }
+    
+    .loading {
+        animation: pulse 1.5s infinite;
+    }
+    
+    /* Password toggle */
+    .password-container {
+        position: relative;
+    }
+    
+    .toggle-password {
+        position: absolute;
+        right: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        color: #6c757d;
+        cursor: pointer;
+        font-size: 18px;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .login-container {
+            padding: 20px;
+        }
+        
+        .login-body {
+            padding: 30px 20px;
+        }
+        
+        .social-buttons {
+            flex-direction: column;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="login-container">
+    <div class="login-card">
+        <div class="login-header">
+            <div class="login-icon">🔐</div>
+            <div class="login-title">Welcome Back</div>
+            <div class="login-subtitle">Login to access your SimpleChat account</div>
+        </div>
+        
+        <div class="login-body">
+            <!-- Display form errors -->
+            {% if form.errors %}
+            <div style="background: #ffeaea; color: #e74c3c; padding: 15px; border-radius: 8px; margin-bottom: 25px; border-left: 4px solid #e74c3c;">
+                <div style="font-weight: bold; margin-bottom: 5px;">⚠️ Login Failed</div>
+                <div style="font-size: 14px;">
+                    {% if form.non_field_errors %}
+                        {{ form.non_field_errors.0 }}
+                    {% else %}
+                        Please check your username and password.
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Display success message from registration -->
+            {% if messages %}
+                {% for message in messages %}
+                    {% if message.tags == 'success' %}
+                    <div style="background: #d4edda; color: #155724; padding: 15px; border-radius: 8px; margin-bottom: 25px; border-left: 4px solid #c3e6cb;">
+                        <div style="font-weight: bold;">✅ {{ message }}</div>
+                    </div>
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+            
+            <form method="post" class="login-form" id="login-form">
+                {% csrf_token %}
+                
+                <div class="form-group">
+                    <label class="form-label" for="id_username">
+                        <span>👤</span> Username
+                    </label>
+                    <input type="text" 
+                           name="username" 
+                           id="id_username" 
+                           class="form-input {% if form.username.errors %}error{% endif %}" 
+                           placeholder="Enter your username"
+                           value="{{ form.username.value|default:'' }}"
+                           required
+                           autocomplete="username"
+                           autofocus>
+                    {% if form.username.errors %}
+                    <div class="error-message">
+                        <span>⚠️</span> {{ form.username.errors.0 }}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="id_password">
+                        <span>🔒</span> Password
+                    </label>
+                    <div class="password-container">
+                        <input type="password" 
+                               name="password" 
+                               id="id_password" 
+                               class="form-input {% if form.password.errors %}error{% endif %}" 
+                               placeholder="Enter your password"
+                               required
+                               autocomplete="current-password">
+                        <button type="button" class="toggle-password" onclick="togglePassword()">
+                            👁️
+                        </button>
+                    </div>
+                    {% if form.password.errors %}
+                    <div class="error-message">
+                        <span>⚠️</span> {{ form.password.errors.0 }}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-options">
+                    <label class="remember-me">
+                        <input type="checkbox" 
+                               name="remember" 
+                               class="remember-checkbox"
+                               id="remember-me">
+                        <span>Remember me</span>
+                    </label>
+                    <a href="#" class="forgot-password" onclick="showForgotPassword()">
+                        Forgot password?
+                    </a>
+                </div>
+                
+                <button type="submit" class="login-btn" id="login-button">
+                    <span>🔐 Login to SimpleChat</span>
+                </button>
+            </form>
+            
+            <div class="guest-login">
+                <p style="color: #6c757d; margin-bottom: 15px; font-size: 14px;">
+                    Or continue without an account
+                </p>
+                <a href="{% url 'rooms' %}" class="guest-btn">
+                    🚪 Browse as Guest
+                </a>
+            </div>
+            
+            <div class="login-footer">
+                <span style="color: #6c757d;">Don't have an account?</span>
+                <a href="{% url 'register' %}">Create an account</a>
+                <span style="color: #6c757d;">|</span>
+                <a href="{% url 'index' %}">Back to Home</a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Login Benefits -->
+    <div class="features-list">
+        <h4><span>✨</span> Why Login to SimpleChat?</h4>
+        <ul>
+            <li>Save your chat preferences and settings</li>
+            <li>Add friends and manage your contacts</li>
+            <li>Access your chat history across devices</li>
+            <li>Receive notifications for friend requests</li>
+            <li>Customize your profile with avatars</li>
+            <li>Create private rooms with passwords</li>
+        </ul>
+    </div>
+</div>
+
+<script>
+    // Toggle password visibility
+    function togglePassword() {
+        const passwordInput = document.getElementById('id_password');
+        const toggleButton = document.querySelector('.toggle-password');
+        
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            toggleButton.innerHTML = '🙈';
+        } else {
+            passwordInput.type = 'password';
+            toggleButton.innerHTML = '👁️';
+        }
+    }
+    
+    // Show forgot password modal (placeholder)
+    function showForgotPassword() {
+        alert('Password recovery feature coming soon!\n\nFor now, please contact support or create a new account.');
+    }
+    
+    // Form validation and submission
+    document.getElementById('login-form').addEventListener('submit', function(e) {
+        const username = document.getElementById('id_username').value.trim();
+        const password = document.getElementById('id_password').value.trim();
+        const loginBtn = document.getElementById('login-button');
+        
+        // Basic validation
+        if (!username || !password) {
+            e.preventDefault();
+            alert('Please fill in both username and password fields.');
+            return false;
+        }
+        
+        if (username.length < 3) {
+            e.preventDefault();
+            alert('Username must be at least 3 characters long.');
+            return false;
+        }
+        
+        if (password.length < 6) {
+            e.preventDefault();
+            alert('Password must be at least 6 characters long.');
+            return false;
+        }
+        
+        // Show loading state
+        const originalText = loginBtn.innerHTML;
+        loginBtn.innerHTML = '⏳ Logging in...';
+        loginBtn.disabled = true;
+        loginBtn.classList.add('loading');
+        
+        // Check "Remember me" and set session length
+        const rememberMe = document.getElementById('remember-me').checked;
+        if (rememberMe) {
+            // Set cookie for 30 days
+            const expiryDate = new Date();
+            expiryDate.setDate(expiryDate.getDate() + 30);
+            document.cookie = `remember_me=true; expires=${expiryDate.toUTCString()}; path=/`;
+        }
+        
+        // Re-enable button after 5 seconds if form doesn't submit
+        setTimeout(() => {
+            loginBtn.innerHTML = originalText;
+            loginBtn.disabled = false;
+            loginBtn.classList.remove('loading');
+        }, 5000);
+        
+        return true;
+    });
+    
+    // Auto-focus on username field
+    document.addEventListener('DOMContentLoaded', function() {
+        const usernameField = document.getElementById('id_username');
+        if (usernameField) {
+            usernameField.focus();
+            
+            // Auto-select if there's text
+            if (usernameField.value) {
+                usernameField.select();
+            }
+        }
+        
+        // Check for remember me cookie
+        if (document.cookie.includes('remember_me=true')) {
+            document.getElementById('remember-me').checked = true;
+        }
+        
+        // Auto-fill demo credentials in development (remove in production)
+        const isLocalhost = window.location.hostname === 'localhost' || 
+                           window.location.hostname === '127.0.0.1';
+        if (isLocalhost && !usernameField.value) {
+            // Optional: Pre-fill demo credentials for testing
+            // usernameField.value = 'demo';
+            // document.getElementById('id_password').value = 'demo123';
+        }
+    });
+    
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        // Ctrl/Cmd + Enter to submit form
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+            e.preventDefault();
+            document.getElementById('login-form').submit();
+        }
+        
+        // Tab to navigate fields
+        if (e.key === 'Tab') {
+            // Focus next input field
+            const inputs = document.querySelectorAll('.form-input');
+            const currentIndex = Array.from(inputs).indexOf(document.activeElement);
+            
+            if (currentIndex < inputs.length - 1) {
+                e.preventDefault();
+                inputs[currentIndex + 1].focus();
+            }
+        }
+        
+        // Escape to clear form
+        if (e.key === 'Escape') {
+            if (confirm('Clear all form fields?')) {
+                document.getElementById('login-form').reset();
+                document.getElementById('id_username').focus();
+            }
+        }
+    });
+    
+    // Input field effects
+    const formInputs = document.querySelectorAll('.form-input');
+    formInputs.forEach(input => {
+        // Add focus effect
+        input.addEventListener('focus', function() {
+            this.parentElement.style.transform = 'translateY(-2px)';
+        });
+        
+        input.addEventListener('blur', function() {
+            this.parentElement.style.transform = 'translateY(0)';
+        });
+        
+        // Real-time validation
+        if (input.id === 'id_username') {
+            input.addEventListener('input', function() {
+                const value = this.value.trim();
+                const errorDiv = this.parentElement.querySelector('.error-message');
+                
+                if (value.length > 0 && value.length < 3) {
+                    if (!errorDiv) {
+                        const errorMsg = document.createElement('div');
+                        errorMsg.className = 'error-message';
+                        errorMsg.innerHTML = '<span>⚠️</span> Username must be at least 3 characters';
+                        this.parentElement.appendChild(errorMsg);
+                    }
+                } else if (errorDiv) {
+                    errorDiv.remove();
+                }
+            });
+        }
+        
+        if (input.id === 'id_password') {
+            input.addEventListener('input', function() {
+                const value = this.value.trim();
+                const errorDiv = this.parentElement.querySelector('.error-message');
+                
+                if (value.length > 0 && value.length < 6) {
+                    if (!errorDiv) {
+                        const errorMsg = document.createElement('div');
+                        errorMsg.className = 'error-message';
+                        errorMsg.innerHTML = '<span>⚠️</span> Password must be at least 6 characters';
+                        this.parentElement.appendChild(errorMsg);
+                    }
+                } else if (errorDiv) {
+                    errorDiv.remove();
+                }
+            });
+        }
+    });
+    
+    // Demo login buttons (for development only)
+    function demoLogin(role) {
+        const demos = {
+            'user': { username: 'demo_user', password: 'demo123' },
+            'admin': { username: 'admin', password: 'admin123' }
+        };
+        
+        if (demos[role]) {
+            if (confirm(`Login as ${role}?\n\nUsername: ${demos[role].username}\nPassword: ${demos[role].password}`)) {
+                document.getElementById('id_username').value = demos[role].username;
+                document.getElementById('id_password').value = demos[role].password;
+                document.getElementById('remember-me').checked = true;
+                document.getElementById('login-form').submit();
+            }
+        }
+    }
+    
+    // Check for login errors in URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const errorType = urlParams.get('error');
+    
+    if (errorType) {
+        let errorMessage = '';
+        switch(errorType) {
+            case 'inactive':
+                errorMessage = 'Your account is inactive. Please contact support.';
+                break;
+            case 'locked':
+                errorMessage = 'Your account is temporarily locked due to multiple failed login attempts.';
+                break;
+            case 'expired':
+                errorMessage = 'Your session has expired. Please login again.';
+                break;
+        }
+        
+        if (errorMessage) {
+            alert('⚠️ Login Error: ' + errorMessage);
+        }
+    }
+</script>
+{% endblock %}

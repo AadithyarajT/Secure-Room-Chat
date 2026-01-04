@@ -1,0 +1,1637 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}SimpleChat{% endblock %}</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+
+    <style>
+      /* Reset and Base Styles */
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      /* Disable text selection on most elements */
+      body, .sidebar, .top-header, .content-container, .desktop-card, .stat-card,
+      .profile-card, .nav-item, .room-item, .dm-item, .btn, .card-header,
+      .action-card, .username-large, .member-since, .description-card,
+      .activity-summary, .profile-info {
+        -webkit-user-select: none; /* Safari */
+        -moz-user-select: none; /* Firefox */
+        -ms-user-select: none; /* Internet Explorer/Edge */
+        user-select: none;
+      }
+
+      /* Allow text selection only in specific areas */
+      .form-control, textarea, input, .description-card p, .message-content,
+      .chat-message, .message-text, [contenteditable="true"], .selectable-text {
+        -webkit-user-select: text;
+        -moz-user-select: text;
+        -ms-user-select: text;
+        user-select: text;
+      }
+
+          /* Disable image dragging */
+      img, .avatar-large, .room-icon, .action-icon, .stat-icon {
+          -webkit-user-drag: none;
+          -khtml-user-drag: none;
+          -moz-user-drag: none;
+          -o-user-drag: none;
+          user-drag: none;
+          pointer-events: none;
+      }
+
+      /* Allow pointer events for avatars that contain text */
+      .user-avatar, .avatar-fallback, .dm-avatar {
+          -webkit-user-drag: none;
+          -khtml-user-drag: none;
+          -moz-user-drag: none;
+          -o-user-drag: none;
+          user-drag: none;
+          /* Remove pointer-events: none to allow text to show */
+}
+
+      /* Enable dragging for specific functional images if needed */
+      img.avatar-large {
+        pointer-events: auto; /* Allow clicking for profile images */
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: #f5f7fa;
+        color: #333;
+        min-height: 100vh;
+      }
+
+      /* Desktop Layout */
+      .app-container {
+        display: flex;
+        min-height: 100vh;
+      }
+
+      /* Sidebar Navigation */
+      .sidebar {
+        width: 280px;
+        background: linear-gradient(180deg, #2c3e50 0%, #1a252f 100%);
+        color: white;
+        position: fixed;
+        height: 100vh;
+        overflow-y: auto;
+        box-shadow: 2px 0 15px rgba(0, 0, 0, 0.1);
+        z-index: 1000;
+      }
+
+      .sidebar-header {
+        padding: 25px 20px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .sidebar-header .logo {
+        font-size: 24px;
+        font-weight: bold;
+        color: white;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .sidebar-nav {
+        padding: 20px 0;
+      }
+
+      .nav-item {
+        display: flex;
+        align-items: center;
+        padding: 15px 25px;
+        color: rgba(255, 255, 255, 0.8);
+        text-decoration: none;
+        transition: all 0.3s;
+        border-left: 4px solid transparent;
+        cursor: pointer;
+      }
+
+      .nav-item:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+        border-left-color: #4caf50;
+      }
+
+      .nav-item.active {
+        background: rgba(255, 255, 255, 0.15);
+        color: white;
+        border-left-color: #4caf50;
+        font-weight: bold;
+      }
+
+      .nav-item i {
+        font-size: 20px;
+        width: 24px;
+        margin-right: 15px;
+        text-align: center;
+      }
+
+      .nav-badge {
+        margin-left: auto;
+        background: #e74c3c;
+        color: white;
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: bold;
+      }
+
+      /* My Rooms & Conversations Section */
+      .rooms-section {
+        margin-top: 20px;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        padding-top: 15px;
+      }
+
+      .rooms-section-header {
+        padding: 0 25px 10px 25px;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: rgba(255, 255, 255, 0.6);
+        font-weight: bold;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .rooms-list {
+        max-height: 200px;
+        overflow-y: auto;
+        margin-bottom: 10px;
+      }
+
+      .dm-list {
+        max-height: 200px;
+        overflow-y: auto;
+        margin-bottom: 10px;
+      }
+
+      .room-item {
+        display: flex;
+        align-items: center;
+        padding: 10px 25px;
+        color: rgba(255, 255, 255, 0.8);
+        text-decoration: none;
+        transition: all 0.2s;
+        border-left: 3px solid transparent;
+        cursor: pointer;
+      }
+
+      .room-item:hover {
+        background: rgba(255, 255, 255, 0.05);
+        color: white;
+        border-left-color: #4caf50;
+      }
+
+      .dm-item {
+        display: flex;
+        align-items: center;
+        padding: 10px 25px;
+        color: rgba(255, 255, 255, 0.8);
+        text-decoration: none;
+        transition: all 0.2s;
+        border-left: 3px solid transparent;
+        cursor: pointer;
+      }
+
+      .dm-item:hover {
+        background: rgba(255, 255, 255, 0.05);
+        color: white;
+        border-left-color: #3498db;
+      }
+
+      .room-icon {
+        width: 24px;
+        height: 24px;
+        border-radius: 4px;
+        background: rgba(255, 255, 255, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 12px;
+        font-size: 12px;
+        flex-shrink: 0;
+      }
+
+      .dm-avatar {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: #3498db;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 11px;
+        margin-right: 12px;
+        flex-shrink: 0;
+      }
+
+      .item-details {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+      }
+
+      .item-name {
+        font-size: 13px;
+        font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .item-type {
+        font-size: 10px;
+        color: rgba(255, 255, 255, 0.5);
+        margin-top: 2px;
+      }
+
+      .unread-badge {
+        background: #e74c3c;
+        color: white;
+        font-size: 10px;
+        min-width: 18px;
+        height: 18px;
+        border-radius: 9px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        margin-left: 8px;
+        padding: 0 5px;
+      }
+
+      .online-dot {
+        display: inline-block;
+        width: 6px;
+        height: 6px;
+        background: #2ecc71;
+        border-radius: 50%;
+        margin-left: 5px;
+      }
+
+      .no-items {
+        padding: 15px 25px;
+        text-align: center;
+        color: rgba(255, 255, 255, 0.5);
+        font-size: 12px;
+        font-style: italic;
+      }
+
+      .view-all-btn {
+        color: #4caf50;
+        font-size: 11px;
+        text-decoration: none;
+        cursor: pointer;
+      }
+
+      .view-all-btn:hover {
+        text-decoration: underline;
+      }
+
+      /* Scrollbar Styling */
+      .rooms-list::-webkit-scrollbar,
+      .dm-list::-webkit-scrollbar {
+        width: 4px;
+      }
+
+      .rooms-list::-webkit-scrollbar-track,
+      .dm-list::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 2px;
+      }
+
+      .rooms-list::-webkit-scrollbar-thumb,
+      .dm-list::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 2px;
+      }
+
+      .rooms-list::-webkit-scrollbar-thumb:hover,
+      .dm-list::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.3);
+      }
+
+      /* Main Content Area */
+      .main-content {
+        flex: 1;
+        margin-left: 280px;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* Enhanced Top Header Bar with Notifications */
+      .top-header {
+        background: linear-gradient(90deg, #ffffff 0%, #f8fafc 100%);
+        padding: 0 30px;
+        box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        height: 70px;
+        border-bottom: 1px solid #eef2f7;
+      }
+
+      .top-header-left {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+      }
+
+      .page-title {
+        font-size: 22px;
+        font-weight: 700;
+        color: #2c3e50;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .top-header-right {
+        display: flex;
+        align-items: center;
+        gap: 25px;
+      }
+
+      .header-controls {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+      }
+
+      /* Enhanced Notifications Dropdown */
+      .notifications-container {
+        position: relative;
+      }
+
+      .notifications-icon {
+        position: relative;
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f8fafc;
+        color: #4a5568;
+        font-size: 20px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: 2px solid #e2e8f0;
+      }
+
+      .notifications-icon:hover {
+        background: #edf2f7;
+        border-color: #4caf50;
+        color: #4caf50;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+      }
+
+      .notifications-badge {
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+        color: white;
+        font-size: 11px;
+        font-weight: bold;
+        min-width: 20px;
+        height: 20px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 6px;
+        border: 2px solid white;
+        box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3);
+        z-index: 1;
+      }
+
+      .notifications-dropdown {
+        position: absolute;
+        top: 55px;
+        right: 0;
+        width: 380px;
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 15px 50px rgba(0, 0, 0, 0.15);
+        border: 1px solid #e2e8f0;
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(-10px);
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        z-index: 1000;
+        overflow: hidden;
+      }
+
+      .notifications-container:hover .notifications-dropdown,
+      .notifications-dropdown:hover {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+      }
+
+      .notifications-header {
+        padding: 20px;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #f8fafc;
+      }
+
+      .notifications-header h4 {
+        font-size: 16px;
+        font-weight: 700;
+        color: #2c3e50;
+        margin: 0;
+      }
+
+      .mark-all-read {
+        background: #4caf50;
+        color: white;
+        border: none;
+        padding: 6px 14px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .mark-all-read:hover {
+        background: #45a049;
+        transform: translateY(-1px);
+      }
+
+      .notifications-list {
+        max-height: 400px;
+        overflow-y: auto;
+      }
+
+      .notification-item {
+        padding: 16px 20px;
+        border-bottom: 1px solid #f1f5f9;
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+        transition: background 0.2s;
+        cursor: pointer;
+      }
+
+      .notification-item:hover {
+        background: #f8fafc;
+      }
+
+      .notification-item.unread {
+        background: rgba(76, 175, 80, 0.05);
+      }
+
+      .notification-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        flex-shrink: 0;
+      }
+
+      .notification-icon.friend-request {
+        background: rgba(52, 152, 219, 0.1);
+        color: #3498db;
+      }
+
+      .notification-icon.friend-accepted {
+        background: rgba(46, 204, 113, 0.1);
+        color: #2ecc71;
+      }
+
+      .notification-icon.message {
+        background: rgba(155, 89, 182, 0.1);
+        color: #9b59b6;
+      }
+
+      .notification-icon.complaint {
+        background: rgba(231, 76, 60, 0.1);
+        color: #e74c3c;
+      }
+
+      .notification-content {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .notification-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 4px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .notification-message {
+        font-size: 13px;
+        color: #718096;
+        line-height: 1.4;
+        margin-bottom: 6px;
+      }
+
+      .notification-time {
+        font-size: 11px;
+        color: #a0aec0;
+        font-weight: 500;
+      }
+
+      .notification-dot {
+        width: 8px;
+        height: 8px;
+        background: #4caf50;
+        border-radius: 50%;
+        flex-shrink: 0;
+        margin-top: 5px;
+      }
+
+      .notifications-footer {
+        padding: 15px 20px;
+        text-align: center;
+        border-top: 1px solid #e2e8f0;
+        background: #f8fafc;
+      }
+
+      .view-all-notifications {
+        color: #4caf50;
+        font-size: 13px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: color 0.2s;
+      }
+
+      .view-all-notifications:hover {
+        color: #3d8b40;
+        text-decoration: underline;
+      }
+
+      .no-notifications {
+        padding: 40px 20px;
+        text-align: center;
+        color: #a0aec0;
+      }
+
+      .no-notifications-icon {
+        font-size: 48px;
+        margin-bottom: 15px;
+        opacity: 0.5;
+      }
+
+      /* User Info */
+      .user-info {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+      }
+
+      .user-avatar {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 18px;
+        box-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);
+        border: 3px solid white;
+      }
+
+      .username {
+        font-weight: 700;
+        color: #2c3e50;
+        font-size: 16px;
+      }
+
+      .logout-btn {
+        background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 10px;
+        cursor: pointer;
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s;
+        box-shadow: 0 4px 12px rgba(231, 76, 60, 0.2);
+      }
+
+      .logout-btn:hover {
+        background: linear-gradient(135deg, #c0392b 0%, #a93226 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(231, 76, 60, 0.3);
+      }
+
+      /* Content Container */
+      .content-container {
+        flex: 1;
+        padding: 30px;
+        max-width: 1400px;
+        margin: 0 auto;
+        width: 100%;
+      }
+
+      /* Page Header */
+      .page-header {
+        margin-bottom: 30px;
+      }
+
+      .page-header h1 {
+        font-size: 28px;
+        color: #2c3e50;
+        margin-bottom: 10px;
+      }
+
+      .page-header p {
+        color: #6c757d;
+        font-size: 16px;
+      }
+
+      /* Desktop Cards */
+      .desktop-card {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+        margin-bottom: 25px;
+        border: 1px solid #e9ecef;
+        transition: transform 0.3s, box-shadow 0.3s;
+      }
+
+      .desktop-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
+      }
+
+      .card-header {
+        padding: 20px 25px;
+        border-bottom: 1px solid #e9ecef;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .card-header h3 {
+        font-size: 18px;
+        color: #2c3e50;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .card-body {
+        padding: 25px;
+      }
+
+      /* Footer */
+      .footer {
+        background: #2c3e50;
+        color: white;
+        padding: 20px 30px;
+        text-align: center;
+        font-size: 14px;
+        margin-left: 280px;
+      }
+
+      /* Desktop Grid Layouts */
+      .grid-2 {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 25px;
+      }
+
+      .grid-3 {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 25px;
+      }
+
+      .grid-4 {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 25px;
+      }
+
+      /* Desktop Forms */
+      .form-group {
+        margin-bottom: 20px;
+      }
+
+      .form-label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #2c3e50;
+      }
+
+      .form-control {
+        width: 100%;
+        padding: 12px 15px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 15px;
+        transition: all 0.3s;
+        -webkit-user-select: text;
+        -moz-user-select: text;
+        -ms-user-select: text;
+        user-select: text;
+      }
+
+      .form-control:focus {
+        border-color: #4caf50;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+      }
+
+      .btn {
+        padding: 12px 25px;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 15px;
+        font-weight: 600;
+        transition: all 0.3s;
+        text-decoration: none;
+        display: inline-block;
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+        color: white;
+      }
+
+      .btn-primary:hover {
+        background: linear-gradient(135deg, #45a049 0%, #3d8b40 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(76, 175, 80, 0.3);
+      }
+
+      .btn-secondary {
+        background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+        color: white;
+      }
+
+      .btn-secondary:hover {
+        background: linear-gradient(135deg, #2980b9 0%, #2471a3 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(52, 152, 219, 0.3);
+      }
+
+      /* Desktop Tables */
+      .data-table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      .data-table th {
+        background: #f8f9fa;
+        padding: 15px;
+        text-align: left;
+        font-weight: 600;
+        color: #2c3e50;
+        border-bottom: 2px solid #e9ecef;
+      }
+
+      .data-table td {
+        padding: 15px;
+        border-bottom: 1px solid #e9ecef;
+        -webkit-user-select: text;
+        -moz-user-select: text;
+        -ms-user-select: text;
+        user-select: text;
+      }
+
+      .data-table tr:hover {
+        background: #f8f9fa;
+      }
+
+      /* Profile clickable */
+      .profile-clickable {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        cursor: pointer;
+        text-decoration: none;
+        color: inherit;
+        padding: 8px 12px;
+        border-radius: 10px;
+        transition: all 0.2s;
+      }
+
+      .profile-clickable:hover {
+        background: rgba(76, 175, 80, 0.1);
+        transform: translateY(-1px);
+      }
+
+      /* Responsive for smaller desktop */
+      @media (max-width: 1200px) {
+        .grid-4 {
+          grid-template-columns: repeat(3, 1fr);
+        }
+        
+        .notifications-dropdown {
+          width: 350px;
+        }
+      }
+
+      @media (max-width: 992px) {
+        .grid-3,
+        .grid-4 {
+          grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .top-header {
+          padding: 0 20px;
+        }
+        
+        .notifications-dropdown {
+          width: 320px;
+          right: -20px;
+        }
+      }
+
+      @media (max-width: 768px) {
+        .sidebar {
+          width: 70px;
+        }
+
+        .sidebar-header .logo span,
+        .nav-item span:not(.nav-badge),
+        .rooms-section-header span,
+        .item-details span,
+        .view-all-btn {
+          display: none;
+        }
+
+        .nav-item i {
+          margin-right: 0;
+          font-size: 24px;
+        }
+
+        .room-item,
+        .dm-item {
+          justify-content: center;
+          padding: 12px 0;
+        }
+
+        .room-icon,
+        .dm-avatar {
+          margin-right: 0;
+          width: 30px;
+          height: 30px;
+          font-size: 14px;
+        }
+
+        .main-content {
+          margin-left: 70px;
+        }
+
+        .footer {
+          margin-left: 70px;
+        }
+        
+        .top-header {
+          height: 60px;
+          padding: 0 15px;
+        }
+        
+        .page-title {
+          font-size: 18px;
+        }
+        
+        .notifications-dropdown {
+          position: fixed;
+          top: 60px;
+          right: 15px;
+          left: 15px;
+          width: auto;
+          max-width: 400px;
+          margin: 0 auto;
+        }
+        
+        .username {
+          display: none;
+        }
+        
+        .logout-btn span {
+          display: none;
+        }
+        
+        .logout-btn {
+          padding: 10px;
+          width: 44px;
+          height: 44px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .notifications-dropdown {
+          width: calc(100vw - 30px);
+        }
+        
+        .content-container {
+          padding: 20px 15px;
+        }
+        
+        .user-avatar {
+          width: 40px;
+          height: 40px;
+          font-size: 16px;
+        }
+      }
+      /* Online/Offline Status Styles */
+.online-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.online-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #2ecc71; /* Green for online */
+    animation: pulse 2s infinite;
+}
+
+.offline-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #95a5a6; /* Gray for offline */
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.status-badge.online {
+    background-color: rgba(46, 204, 113, 0.1);
+    color: #27ae60;
+}
+
+.status-badge.offline {
+    background-color: rgba(149, 165, 166, 0.1);
+    color: #7f8c8d;
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 6px rgba(46, 204, 113, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(46, 204, 113, 0);
+    }
+    }
+    /* Active Now highlight */
+    .friend-card.active-now {
+        border-left: 4px solid #2ecc71;
+        background-color: rgba(46, 204, 113, 0.02);
+    }
+
+    /* Profile status */
+    .profile-status {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 5px;
+    }
+
+    .profile-status.online {
+        color: #27ae60;
+    }
+
+    .profile-status.offline {
+        color: #95a5a6;
+    }
+    </style>
+    {% block extra_css %}{% endblock %}
+  </head>
+  <body>
+    <div class="app-container">
+      <!-- Desktop Sidebar -->
+      <div class="sidebar">
+        <div class="sidebar-header">
+          <a href="/" class="logo">
+            <span>💬</span>
+            <span>SimpleChat</span>
+          </a>
+        </div>
+
+        <div class="sidebar-nav">
+          <a
+            href="/"
+            class="nav-item {% if request.path == '/' %}active{% endif %}"
+          >
+            <span>🏠</span>
+            <span>Home</span>
+          </a>
+
+          <a
+            href="{% url 'rooms' %}"
+            class="nav-item {% if 'rooms' in request.path %}active{% endif %}"
+          >
+            <span>🚪</span>
+            <span>Rooms</span>
+          </a>
+
+          {% if user.is_authenticated %}
+          <a
+            href="{% url 'friend_list' %}"
+            class="nav-item {% if 'friends' in request.path %}active{% endif %}"
+          >
+            <span>👥</span>
+            <span>Friends</span>
+            {% if pending_requests > 0 %}
+            <span class="nav-badge">{{ pending_requests }}</span>
+            {% endif %}
+          </a>
+
+          <a
+            href="{% url 'my_dm_rooms' %}"
+            class="nav-item {% if 'direct-messages' in request.path %}active{% endif %}"
+          >
+            <span>💬</span>
+            <span>Direct Messages</span>
+            {% if dm_rooms_count and dm_rooms_count > 0 %}
+            <span class="nav-badge">{{ dm_rooms_count }}</span>
+            {% endif %}
+          </a>
+
+          {% endif %}
+
+          <!-- My Rooms & Conversations Section - Only for logged in users -->
+          <!-- My Rooms & Conversations Section - Only for logged in users -->
+          {% if user.is_authenticated %}
+          <div class="rooms-section">
+              <!-- My Active Rooms (NON-DM Rooms) -->
+              <div class="rooms-section-header">
+                  <span>MY CHAT ROOMS</span>
+                  <a href="{% url 'rooms' %}" class="view-all-btn">All</a>
+              </div>
+              
+              <div class="rooms-list">
+                  {% if my_active_rooms %}
+                      {% for room in my_active_rooms %}
+                      <a href="{% url 'room' room.id %}" class="room-item {% if request.path == '/chat/'|add:room.id|add:'/' %}active{% endif %}">
+                          <div class="room-icon">
+                              {% comment %} Show DM icon for direct message rooms {% endcomment %}
+                              {% if room.room_type == 'direct' %}
+                                  💬
+                              {% elif room.is_private %}
+                                  🔒
+                              {% else %}
+                                  🌐
+                              {% endif %}
+                          </div>
+                          <div class="item-details">
+                              <div class="item-name">
+                                  {% if room.room_type == 'direct' %}
+                                      {% comment %} For DM rooms, get the other participant's name from context {% endcomment %}
+                                      {% for dm in my_recent_dms %}
+                                          {% if dm.room.id == room.id %}
+                                              {{ dm.friend.username|truncatechars:15 }}
+                                          {% endif %}
+                                      {% endfor %}
+                                  {% else %}
+                                      {{ room.name|default:room.short_code|default:"Room"|truncatechars:15 }}
+                                  {% endif %}
+                              </div>
+                              <div class="item-type">
+                                  {% if room.room_type == 'direct' %}
+                                      DM
+                                  {% else %}
+                                      {{ room.room_type|title }}
+                                  {% endif %}
+                              </div>
+                          </div>
+                      </a>
+                      {% endfor %}
+                  {% else %}
+                      <div class="no-items">
+                          No active rooms
+                      </div>
+                  {% endif %}
+              </div>
+              
+              <!-- Direct Conversations (Separate section for clarity) -->
+              <div class="rooms-section-header" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
+                  <span>DIRECT MESSAGES</span>
+                  <a href="{% url 'my_dm_rooms' %}" class="view-all-btn">All</a>
+              </div>
+              
+              <div class="dm-list">
+                  {% if my_recent_dms %}
+                      {% for dm in my_recent_dms %}
+                      <a href="{% url 'room' dm.room.id %}" class="dm-item {% if request.path == '/chat/'|add:dm.room.id|add:'/' %}active{% endif %}">
+                          <div class="dm-avatar">
+                              {{ dm.friend.username|first|upper }}
+                          </div>
+                          <div class="item-details">
+                              <div class="item-name">
+                                  {{ dm.friend.username|truncatechars:15 }}
+                                  {% if dm.is_online %}
+                                  <span class="online-dot" title="Online"></span>
+                                  {% endif %}
+                              </div>
+                              <div class="item-type">
+                                  {% if dm.last_message_time %}
+                                  {{ dm.last_message_time }}
+                                  {% else %}
+                                  No messages
+                                  {% endif %}
+                              </div>
+                          </div>
+                          {% if dm.unread_count and dm.unread_count > 0 %}
+                          <div class="unread-badge">{{ dm.unread_count }}</div>
+                          {% endif %}
+                      </a>
+                      {% endfor %}
+                  {% else %}
+                      <div class="no-items">
+                          No conversations
+                      </div>
+                  {% endif %}
+              </div>
+          </div>
+          {% endif %}
+
+{% comment %} {% if user.is_staff %}
+          <div
+            style="
+              padding: 25px 20px;
+              border-top: 1px solid rgba(255, 255, 255, 0.1);
+              margin-top: 20px;
+            "
+          >
+            <div
+              style="
+                color: #4caf50;
+                font-size: 12px;
+                font-weight: bold;
+                margin-bottom: 10px;
+              "
+            >
+              ADMIN
+            </div>
+            <a href="/admin/" class="nav-item">
+              <span>👑</span>
+              <span>Admin Panel</span>
+            </a>
+          </div>
+          {% endif %} {% endcomment %}
+        </div>
+      </div>
+
+      <!-- Main Content Area -->
+      <div class="main-content">
+        <!-- Enhanced Top Header Bar with Notifications -->
+        <div class="top-header">
+          <div class="top-header-left">
+            <div class="page-title">
+              {% block page_title %}{% endblock %}
+            </div>
+          </div>
+          
+          <div class="top-header-right">
+            <!-- Notifications Container -->
+            {% if user.is_authenticated %}
+            <div class="notifications-container">
+              <div class="notifications-icon">
+                🔔
+                {% if unread_notifications and unread_notifications > 0 %}
+                <span class="notifications-badge">{{ unread_notifications }}</span>
+                {% endif %}
+              </div>
+              
+              <div class="notifications-dropdown">
+                <div class="notifications-header">
+                  <h4>Notifications</h4>
+                  {% comment %} {% if unread_notifications and unread_notifications > 0 %}
+                  <button class="mark-all-read" onclick="markAllNotificationsAsRead()">Mark all as read</button>
+                  {% endif %} {% endcomment %}
+                </div>
+                
+                <div class="notifications-list">
+                  {% if unread_notifications and unread_notifications > 0 %}
+                    {% comment %} Notification items would be loaded via AJAX or template {% endcomment %}
+                    <div class="notification-item unread">
+                      <div class="notification-icon friend-request">
+                        👤
+                      </div>
+                      <div class="notification-content">
+                        <div class="notification-title">
+                          <span>New Friend Request</span>
+                          <span class="notification-time"></span>
+                        </div>
+                      </div>
+                      <div class="notification-dot"></div>
+                    </div>
+                  {% else %}
+                    <div class="no-notifications">
+                      <div class="no-notifications-icon">🔔</div>
+                      <p>No new notifications</p>
+                    </div>
+                  {% endif %}
+                </div>
+                
+                <div class="notifications-footer">
+                  <a href="{% url 'notifications' %}" class="view-all-notifications">
+                    View all notifications
+                    <span>→</span>
+                  </a>
+                </div>
+              </div>
+            </div>
+            {% endif %}
+            
+            <div class="user-info">
+              {% if user.is_authenticated %}
+              <a href="{% url 'profile' %}" class="profile-clickable" style="text-decoration:none; color:inherit;">
+                  <div class="user-avatar">
+                      {{ user.username|first|upper }}
+                  </div>
+
+                  <div class="username">
+                      {{ user.username }}
+                  </div>
+              </a>
+
+              <a href="{% url 'logout' %}" class="logout-btn">
+                <span>🚪</span>
+                <span>Logout</span>
+              </a>
+              {% else %}
+              <a
+                href="{% url 'login' %}"
+                class="btn btn-primary"
+                style="padding: 8px 16px"
+                >Login</a
+              >
+              <a
+                href="{% url 'register' %}"
+                class="btn btn-secondary"
+                style="padding: 8px 16px"
+                >Register</a
+              >
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <!-- Page Content -->
+        <div class="content-container">{% block content %}{% endblock %}</div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer mt-auto">
+      <div class="container py-4">
+        <div class="row align-items-center">
+          <!-- Left: Copyright -->
+          <div class="col-md-6 text-center text-md-start mb-3 mb-md-0">
+            <span class="text-white">
+              © 2026 <strong>SimpleChat</strong>. Privacy-first messaging.
+            </span>
+          </div>
+
+          <!-- Right: Social Media Icons -->
+          <div class="col-md-6 text-center text-md-end">
+            <div class="social-links d-inline-flex gap-3">
+              <a
+                href="#"
+                class="btn btn-sm btn-square btn-outline-light text-white"
+                aria-label="Twitter"
+              >
+                <i class="fab fa-x-twitter"></i>
+              </a>
+
+              <a
+                href="#"
+                class="btn btn-sm btn-square btn-outline-light text-white"
+                aria-label="GitHub"
+              >
+                <i class="fab fa-github"></i>
+              </a>
+
+              <a
+                href="#"
+                class="btn btn-sm btn-square btn-outline-light text-white"
+                aria-label="Instagram"
+              >
+                <i class="fab fa-instagram"></i>
+              </a>
+
+              <a
+                href="#"
+                class="btn btn-sm btn-square btn-outline-light text-white"
+                aria-label="LinkedIn"
+              >
+                <i class="fab fa-linkedin-in"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    {% block extra_js %}{% endblock %}
+
+    <script>
+      // Prevent right-click context menu
+      document.addEventListener('contextmenu', function(e) {
+        if (e.target.closest('.sidebar') || e.target.closest('.top-header') || 
+            e.target.closest('.profile-card') || e.target.closest('.desktop-card')) {
+          e.preventDefault();
+        }
+      });
+      
+      // Prevent drag and drop of images
+      document.addEventListener('dragstart', function(e) {
+        if (e.target.tagName === 'IMG' || e.target.classList.contains('user-avatar') || 
+            e.target.classList.contains('avatar-large')) {
+          e.preventDefault();
+        }
+      });
+      
+      // Function to mark all notifications as read
+      function markAllNotificationsAsRead() {
+        fetch('/notifications/mark-all-read/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+          }
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            // Update UI
+            const badge = document.querySelector('.notifications-badge');
+            if (badge) {
+              badge.remove();
+            }
+            
+            const notificationItems = document.querySelectorAll('.notification-item.unread');
+            notificationItems.forEach(item => {
+              item.classList.remove('unread');
+              const dot = item.querySelector('.notification-dot');
+              if (dot) dot.remove();
+            });
+            
+            // Show success message
+            showToast('All notifications marked as read');
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          showToast('Error marking notifications as read', 'error');
+        });
+      }
+      
+      // Helper function to get CSRF token
+      function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+          const cookies = document.cookie.split(';');
+          for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+              cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+              break;
+            }
+          }
+        }
+        return cookieValue;
+      }
+      
+      // Toast notification function
+      function showToast(message, type = 'success') {
+        const toast = document.createElement('div');
+        toast.textContent = message;
+        toast.style.cssText = `
+          position: fixed;
+          bottom: 30px;
+          right: 30px;
+          background: ${type === 'error' ? '#e74c3c' : '#4CAF50'};
+          color: white;
+          padding: 15px 25px;
+          border-radius: 10px;
+          box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+          z-index: 10000;
+          font-weight: 600;
+          animation: slideIn 0.3s ease;
+        `;
+        
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+          toast.style.animation = 'slideOut 0.3s ease';
+          setTimeout(() => toast.remove(), 300);
+        }, 3000);
+      }
+
+      // Load sidebar content via AJAX if user is authenticated
+      {% if user.is_authenticated %}
+      loadSidebarContent();
+      {% endif %}
+
+      function loadSidebarContent() {
+          fetch('/api/sidebar-content/', {
+              method: 'GET',
+              headers: {
+                  'Content-Type': 'application/json',
+              }
+          })
+          .then(response => response.json())
+          .then(data => {
+              if (data.success) {
+                  updateSidebarContent(data);
+              }
+          })
+          .catch(error => {
+              console.error('Error loading sidebar content:', error);
+          });
+      }
+
+      function updateSidebarContent(data) {
+          // Update rooms list
+          const roomsList = document.querySelector('.rooms-list');
+          if (roomsList && data.rooms) {
+              if (data.rooms.length > 0) {
+                  roomsList.innerHTML = data.rooms.map(room => `
+                      <a href="/chat/${room.id}/" class="room-item">
+                          <div class="room-icon">
+                              ${room.is_private ? '🔒' : '🌐'}
+                          </div>
+                          <div class="item-details">
+                              <div class="item-name">
+                                  ${room.name || room.short_code || 'Room'}
+                              </div>
+                              <div class="item-type">
+                                  ${room.room_type === 'direct' ? 'DM' : room.room_type}
+                              </div>
+                          </div>
+                      </a>
+                  `).join('');
+              } else {
+                  roomsList.innerHTML = '<div class="no-items">No active rooms</div>';
+              }
+          }
+          
+          // Update DMs list
+          const dmList = document.querySelector('.dm-list');
+          if (dmList && data.dms) {
+              if (data.dms.length > 0) {
+                  dmList.innerHTML = data.dms.map(dm => `
+                      <a href="/chat/${dm.room_id}/" class="dm-item">
+                          <div class="dm-avatar">
+                              ${dm.friend_name.charAt(0).toUpperCase()}
+                          </div>
+                          <div class="item-details">
+                              <div class="item-name">
+                                  ${dm.friend_name}
+                                  ${dm.is_online ? '<span class="online-dot" title="Online"></span>' : ''}
+                              </div>
+                              <div class="item-type">
+                                  ${dm.last_message_time || 'No messages'}
+                              </div>
+                          </div>
+                          ${dm.unread_count > 0 ? `<div class="unread-badge">${dm.unread_count}</div>` : ''}
+                      </a>
+                  `).join('');
+              } else {
+                  dmList.innerHTML = '<div class="no-items">No conversations</div>';
+              }
+          }
+      }
+
+      // Keyboard shortcuts for navigation
+      document.addEventListener('keydown', function(e) {
+        // Alt + 1 for Home
+        if (e.altKey && e.key === '1') {
+          e.preventDefault();
+          window.location.href = '/';
+        }
+
+        // Alt + 2 for Rooms
+        if (e.altKey && e.key === '2') {
+          e.preventDefault();
+          window.location.href = '{% url "rooms" %}';
+        }
+
+        // Alt + 3 for Friends
+        if (e.altKey && e.key === '3') {
+          e.preventDefault();
+          window.location.href = '{% url "friend_list" %}';
+        }
+
+        // Alt + 4 for DMs
+        if (e.altKey && e.key === '4') {
+          e.preventDefault();
+          window.location.href = '{% url "my_dm_rooms" %}';
+        }
+
+        // Alt + N for Notifications (opens dropdown)
+        if (e.altKey && e.key === 'n') {
+          e.preventDefault();
+          const notificationsIcon = document.querySelector('.notifications-icon');
+          if (notificationsIcon) {
+            notificationsIcon.click();
+          }
+        }
+      });
+      // Function to update online status periodically
+      function updateOnlineStatus() {
+          if (!window.location.pathname.includes('/chat/')) {
+              fetch('/api/check-online-status/', {
+                  method: 'GET',
+                  headers: {
+                      'Content-Type': 'application/json',
+                  }
+              })
+              .then(response => response.json())
+              .then(data => {
+                  if (data.success) {
+                      // Update status indicators on the page
+                      data.online_users.forEach(userId => {
+                          const elements = document.querySelectorAll(`[data-user-id="${userId}"] .status-dot`);
+                          elements.forEach(el => {
+                              el.classList.remove('offline-dot');
+                              el.classList.add('online-dot');
+                              el.title = 'Active Now';
+                          });
+                      });
+                  }
+              })
+              .catch(error => console.error('Error updating status:', error));
+          }
+      }
+
+      // Update every 30 seconds
+      if (window.location.pathname.includes('/friends') || 
+          window.location.pathname.includes('/profile') ||
+          window.location.pathname === '/') {
+          setInterval(updateOnlineStatus, 30000);
+      }
+
+      // Initial update
+      document.addEventListener('DOMContentLoaded', function() {
+          setTimeout(updateOnlineStatus, 2000);
+      });
+          </script>
+  </body>
+</html>
