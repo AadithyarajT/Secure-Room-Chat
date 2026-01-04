@@ -196,6 +196,7 @@ class MediaView(models.Model):
         return f"{self.username} viewed {self.media.id}"
 
 
+# In models.py - Update TemporaryMedia model
 class TemporaryMedia(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     file = models.FileField(upload_to="temp_media/%Y/%m/%d/")
@@ -203,9 +204,16 @@ class TemporaryMedia(models.Model):
     room_id = models.UUIDField()
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField(null=True)
+    # Add these new fields
+    media_type = models.CharField(
+        max_length=10,
+        choices=[("once", "View Once"), ("normal", "Normal Media")],
+        default="once",
+    )
+    is_expired = models.BooleanField(default=False)
 
     def __str__(self):
-        return f"Media {self.id} by {self.uploader_username}"
+        return f"Media {self.id} by {self.uploader_username} ({self.media_type})"
 
     def delete(self, *args, **kwargs):
         if self.file:
@@ -214,6 +222,8 @@ class TemporaryMedia(models.Model):
 
     def has_user_viewed(self, user=None, session_key=None):
         """Check if a specific user/session has viewed this media"""
+        if self.media_type == "normal":
+            return False  # Normal media can be viewed multiple times
         if user:
             return self.user_views.filter(user=user).exists()
         elif session_key:
@@ -222,6 +232,9 @@ class TemporaryMedia(models.Model):
 
     def mark_as_viewed_by_user(self, user=None, session_key=None, username=""):
         """Mark this media as viewed by a specific user/session"""
+        if self.media_type == "normal":
+            return  # Don't track views for normal media
+
         if user:
             MediaView.objects.get_or_create(
                 media=self, user=user, defaults={"username": username}
@@ -254,6 +267,11 @@ class ChatMessage(models.Model):
     is_media = models.BooleanField(default=False)
     media_id = models.UUIDField(null=True, blank=True)
     filename = models.CharField(max_length=255, null=True, blank=True)
+    media_type = models.CharField(
+        max_length=10,
+        choices=[("once", "View Once"), ("normal", "Normal Media")],
+        default="once",
+    )
     is_image = models.BooleanField(default=False)
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -451,5 +469,3 @@ class UserRoomJoin(models.Model):
 def create_user_profile(sender, instance, created, **kwargs):
     if created:
         Profile.objects.create(user=instance)
-
-

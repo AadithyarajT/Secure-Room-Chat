@@ -756,7 +756,6 @@
         background: #45a049;
     }
     
-    /* Responsive */
     @media (max-width: 768px) {
         .message {
             max-width: 85%;
@@ -780,6 +779,68 @@
             display: none;
         }
     }
+    .toggle-btn.active {
+        background: #4caf50 !important;
+        color: white !important;
+        font-weight: bold;
+    }
+    
+    .media-type-toggle {
+        animation: slideDown 0.3s ease;
+    }
+    
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    .selected-file-indicator {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        padding: 12px 15px;
+        border-radius: 10px;
+        margin-bottom: 10px;
+        border-left: 4px solid #4caf50;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        animation: slideDown 0.3s ease;
+    }
+    
+    .toggle-btn.active {
+        background: #4caf50 !important;
+        color: white !important;
+        font-weight: 600;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .toggle-btn:not(.active) {
+        background: transparent !important;
+        color: #6c757d !important;
+    }
+    
+    .toggle-btn:hover {
+        transform: translateY(-1px);
+    }
+    
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .clear-file:hover {
+        background: #c82333 !important;
+        transform: scale(1.1);
+    }
+</style>
 </style>
 {% endblock %}
 
@@ -816,34 +877,55 @@
     
     <!-- Messages Area -->
     <div id="chat-messages"></div>
-    
-    <!-- Input Area -->
-    <div class="chat-input-area">
-        <!-- Selected File Indicator -->
-        <div class="selected-file-indicator" id="selected-file-indicator">
-            <span id="selected-file-name"></span>
-            <button class="clear-file" onclick="clearSelectedFile()">✕</button>
-        </div>
-        
-        <div class="input-wrapper">
-            <label for="media-upload" class="media-upload-label" title="Attach media">
-                📎
-            </label>
-            <input type="file" id="media-upload" accept="image/*,video/*">
+     
+<!-- In chat.html - Add media type toggle in the input area -->
+        <div class="chat-input-area">
+            <!-- Selected File Indicator with Type Toggle -->
+            <div class="selected-file-indicator" id="selected-file-indicator" style="display: none;">
+                <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span id="selected-file-name" style="font-weight: 500; font-size: 14px;"></span>
+                        <div class="media-type-toggle" style="display: flex; align-items: center; gap: 5px;">
+                            <span style="font-size: 12px; color: #6c757d;">Send as:</span>
+                            <div class="toggle-buttons" style="display: flex; gap: 3px; background: #e9ecef; padding: 3px; border-radius: 6px;">
+                                <button class="toggle-btn active" data-type="normal" onclick="setMediaType('normal')" 
+                                        style="background: #4caf50; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 11px; cursor: pointer; transition: all 0.2s;">
+                                    🔓 Normal
+                                </button>
+                                <button class="toggle-btn" data-type="once" onclick="setMediaType('once')"
+                                        style="background: transparent; color: #6c757d; border: none; padding: 5px 10px; border-radius: 4px; font-size: 11px; cursor: pointer; transition: all 0.2s;">
+                                    🔒 View Once
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="clear-file" onclick="clearSelectedFile()" 
+                            style="background: #dc3545; color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center;">
+                        ✕
+                    </button>
+                </div>
+            </div>
             
-            <textarea 
-                id="message-input" 
-                placeholder="Type a message..." 
-                rows="1"
-                autocomplete="off"
-            ></textarea>
+            <!-- Main Input Area -->
+            <div class="input-wrapper">
+                <label for="media-upload" class="media-upload-label" title="Attach media">
+                    📎
+                </label>
+                <input type="file" id="media-upload" accept="image/*,video/*" style="display: none;">
+                
+                <textarea 
+                    id="message-input" 
+                    placeholder="Type a message..." 
+                    rows="1"
+                    autocomplete="off"
+                ></textarea>
+            </div>
+            
+            <button class="send-btn" onclick="handleSend()" title="Send message">
+                📤
+            </button>
         </div>
-        
-        <button class="send-btn" onclick="handleSend()" title="Send message">
-            📤
-        </button>
     </div>
-</div>
 
 <!-- Emoji Picker -->
 <div id="emoji-picker">
@@ -930,7 +1012,8 @@
     let selectedMessageContent = "";
     let selectedMessageElement = null;
     let editingMessageId = null;
-    
+    let currentMediaType = "normal"; // Default to normal
+
     // WebSocket connection
     const protocol = window.location.protocol === "https:" ? "wss://" : "ws://";
     const chatSocket = new WebSocket(
@@ -977,7 +1060,8 @@
                                 msg.filename || "",
                                 msg.is_image || false,
                                 msg.is_edited || false,
-                                msg.is_deleted || false
+                                msg.is_deleted || false,
+                                msg.media_type || "once" // Make sure this is passed
                             );
                             messageCache.set(msg.id, true);
                         }
@@ -997,7 +1081,8 @@
                         data.filename || "",
                         data.is_image || false,
                         false,
-                        false
+                        false,
+                        data.media_type || "once" // Make sure this is passed
                     );
                     messageCache.set(data.id, true);
                     scrollToBottom();
@@ -1031,7 +1116,22 @@
             console.error("❌ Error parsing message:", err, e.data);
         }
     };
-    
+
+    // Media Type Functions
+    function setMediaType(type) {
+        currentMediaType = type;
+        
+        // Update toggle buttons
+        document.querySelectorAll('.toggle-btn').forEach(btn => {
+            btn.classList.remove('active');
+            if (btn.dataset.type === type) {
+                btn.classList.add('active');
+            }
+        });
+        
+        console.log(`Media type set to: ${type}`);
+    }
+
     // Handle file selection
     document.getElementById("media-upload").addEventListener("change", function() {
         if (this.files.length > 0) {
@@ -1041,18 +1141,31 @@
             
             const icon = selectedFile.type.startsWith("image/") ? "🖼️" : "🎬";
             nameSpan.textContent = `${icon} ${selectedFile.name}`;
-            indicator.classList.add("show");
+            
+            // Show the indicator
+            indicator.style.display = "block";
             isMediaSelected = true;
+            
+            // Set default media type to normal for all files
+            setMediaType("normal");
+            
+            // Show file size
+            const sizeInMB = (selectedFile.size / (1024 * 1024)).toFixed(2);
+            nameSpan.innerHTML += ` <span style="font-size: 11px; color: #6c757d; margin-left: 5px;">(${sizeInMB} MB)</span>`;
         }
     });
-    
+
     function clearSelectedFile() {
         document.getElementById("media-upload").value = "";
-        document.getElementById("selected-file-indicator").classList.remove("show");
+        document.getElementById("selected-file-indicator").style.display = "none";
         selectedFile = null;
         isMediaSelected = false;
+        
+        // Reset media type to default
+        currentMediaType = "normal";
+        setMediaType("normal");
     }
-    
+
     // Handle send (text or media)
     async function handleSend() {
         if (isMediaSelected && selectedFile) {
@@ -1077,17 +1190,19 @@
         }
     }
     
+    // Upload media function
     async function uploadMedia() {
         if (!selectedFile) {
             alert("No file selected!");
             return;
         }
         
-        console.log("📎 Uploading file:", selectedFile.name);
+        console.log("📎 Uploading file:", selectedFile.name, "Type:", currentMediaType);
         
         const formData = new FormData();
         formData.append("file", selectedFile);
         formData.append("room_id", roomId);
+        formData.append("media_type", currentMediaType);
         
         let csrftoken = getCookie("csrftoken");
         const csrfInput = document.querySelector("[name=csrfmiddlewaretoken]");
@@ -1101,7 +1216,8 @@
         }
         
         try {
-            const res = await fetch("/upload-once/", {
+            // Use the new endpoint
+            const res = await fetch("/upload-media/", {
                 method: "POST",
                 body: formData,
                 headers: headers,
@@ -1125,6 +1241,7 @@
                     media_id: data.media_id,
                     filename: selectedFile.name,
                     is_image: data.is_image,
+                    media_type: currentMediaType
                 };
                 
                 if (chatSocket.readyState === WebSocket.OPEN) {
@@ -1141,7 +1258,8 @@
         }
     }
     
-    function addMessage(id, user, text, reactions, is_media = false, media_id = "", filename = "", is_image = false, is_edited = false, is_deleted = false) {
+    // Add message to chat
+    function addMessage(id, user, text, reactions, is_media = false, media_id = "", filename = "", is_image = false, is_edited = false, is_deleted = false, media_type = "once") {
         const chatDiv = document.getElementById("chat-messages");
         
         const existingMsg = document.querySelector(`[data-msg-id="${id}"]`);
@@ -1154,18 +1272,17 @@
         msgDiv.className = `message ${user === username ? 'own' : ''}`;
         msgDiv.dataset.msgId = id;
         msgDiv.dataset.username = user;
-        msgDiv.dataset.messageText = text; // Store original text
+        msgDiv.dataset.messageText = text;
         msgDiv.dataset.isDeleted = is_deleted;
         msgDiv.dataset.isMedia = is_media;
         if (is_media && media_id) {
             msgDiv.dataset.mediaId = media_id;
+            msgDiv.dataset.mediaType = media_type;
         }
         
         // Add click handler to select message and show context menu (for own messages)
         if (user === username) {
-            // Click to select message
             msgDiv.onclick = (e) => {
-                // Don't select if clicking on buttons or other interactive elements
                 if (e.target.classList.contains("view-media-btn") || 
                     e.target.closest(".view-media-btn") ||
                     e.target.closest(".context-menu")) {
@@ -1184,79 +1301,21 @@
                 msgDiv.classList.add('selected');
                 selectedMessageElement = msgDiv;
                 selectedMsgId = id;
-                
-                // Get message text content from data attribute
                 selectedMessageContent = msgDiv.dataset.messageText || text;
                 
                 console.log("✅ Message selected:", {
                     id: selectedMsgId,
                     content: selectedMessageContent,
-                    username: user,
-                    isDeleted: msgDiv.dataset.isDeleted
+                    username: user
                 });
                 
                 // Show context menu at message position
                 const rect = msgDiv.getBoundingClientRect();
                 showContextMenu(rect.right - 200, rect.top);
             };
-            
-            // Also support long press for mobile
-            let longPressTriggered = false;
-            
-            msgDiv.onmousedown = (e) => {
-                if (e.target.classList.contains("view-media-btn") || 
-                    e.target.closest(".view-media-btn")) {
-                    return;
-                }
-                
-                if (e.button === 0) {
-                    longPressTriggered = false;
-                    
-                    longPressTimer = setTimeout(() => {
-                        longPressTriggered = true;
-                        
-                        // Deselect other messages
-                        document.querySelectorAll('.message.selected').forEach(m => {
-                            m.classList.remove('selected');
-                        });
-                        
-                        // Select this message
-                        msgDiv.classList.add('selected');
-                        selectedMessageElement = msgDiv;
-                        selectedMsgId = id;
-                        
-                        // Get message text content from data attribute
-                        selectedMessageContent = msgDiv.dataset.messageText || text;
-                        
-                        showContextMenu(e.clientX, e.clientY);
-                    }, 300);
-                }
-            };
-            
-            msgDiv.onmouseup = (e) => {
-                if (longPressTimer) {
-                    clearTimeout(longPressTimer);
-                    longPressTimer = null;
-                }
-                
-                // If long press was triggered, prevent click
-                if (longPressTriggered) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    longPressTriggered = false;
-                }
-            };
-            
-            msgDiv.onmouseleave = () => {
-                if (longPressTimer) {
-                    clearTimeout(longPressTimer);
-                    longPressTimer = null;
-                }
-                longPressTriggered = false;
-            };
         }
         
-        // Right-click for emoji reactions (all messages)
+        // Right-click for emoji reactions
         msgDiv.oncontextmenu = (e) => {
             if (e.target.classList.contains("view-media-btn") || 
                 e.target.closest(".view-media-btn")) {
@@ -1306,12 +1365,23 @@
             const icon = is_image ? "🖼️" : "🎬";
             const fileType = is_image ? "Image" : "Video";
             
+            // Use the media_type parameter that was passed
+            const actualMediaType = media_type || "once";
+            const typeLabel = actualMediaType === 'normal' ? '🔓 Normal' : '🔒 View Once';
+            
+            let buttonText = actualMediaType === "once" ? "🔓 ormal" : "🔓 View";
+            
             content += `
                 <div class="media-container">
                     <span class="media-icon">${icon}</span>
-                    <span style="font-size: 13px;">${fileType} • ${filename}</span><br>
-                    <button class="view-media-btn" onclick="viewOnceMedia('${media_id}', ${is_image}, event)">
-                        🔓 View Once
+                    <span style="font-size: 13px;">${fileType} • ${filename}</span>
+                    <span style="font-size: 11px; background: ${actualMediaType === 'normal' ? '#e8f5e9' : '#fff3e0'}; 
+                        color: ${actualMediaType === 'normal' ? '#2c3e50' : '#e65100'}; 
+                        padding: 2px 8px; border-radius: 4px; margin-left: 8px;">
+                        ${typeLabel}
+                    </span><br>
+                    <button class="view-media-btn" onclick="viewMedia('${media_id}', ${is_image}, '${actualMediaType}', event)">
+                        ${buttonText}
                     </button>
                 </div>
             `;
@@ -1350,7 +1420,7 @@
                     msg.dataset.isDeleted = "true";
                 } else {
                     bubble.textContent = newContent;
-                    msg.dataset.messageText = newContent; // Update stored text
+                    msg.dataset.messageText = newContent;
                 }
             }
             
@@ -1407,6 +1477,66 @@
         }
     }
     
+    // View media function
+    async function viewMedia(media_id, is_image, media_type, event) {
+        event.stopPropagation();
+        
+        // For normal media, show directly
+        if (media_type === "normal") {
+            const csrftoken = getCookie("csrftoken") || document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+            
+            const headers = {};
+            if (csrftoken) {
+                headers["X-CSRFToken"] = csrftoken;
+            }
+            
+            try {
+                const response = await fetch(`/media/permanent/${media_id}/`, {
+                    method: "GET",
+                    headers: headers,
+                    credentials: "same-origin"
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === "ok") {
+                    openMediaModal(data.url, data.is_image, data.filename);
+                    return;
+                }
+            } catch (error) {
+                console.error("Error getting permanent media:", error);
+                // Fall back to regular view if permanent endpoint fails
+            }
+        }
+        
+        // For view-once media, check first
+        try {
+            const csrftoken = getCookie("csrftoken") || document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+            
+            const headers = {};
+            if (csrftoken) {
+                headers["X-CSRFToken"] = csrftoken;
+            }
+            
+            const response = await fetch(`/media/check/${media_id}/`, {
+                method: "POST",
+                headers: headers,
+                credentials: "same-origin"
+            });
+            
+            const data = await response.json();
+            
+            if (data.status === "ok") {
+                openMediaModal(data.view_url, data.is_image, data.filename);
+            } else {
+                alert("Error: " + data.message);
+            }
+        } catch (error) {
+            console.error("Error checking media:", error);
+            alert("Failed to load media");
+        }
+    }
+    
     // Context Menu Functions
     function showContextMenu(x, y) {
         const contextMenu = document.getElementById("context-menu");
@@ -1415,7 +1545,6 @@
         contextMenu.style.display = "block";
         const rect = contextMenu.getBoundingClientRect();
         
-        // Adjust position if it would go off screen
         let left = x;
         let top = y;
         
@@ -1706,39 +1835,6 @@
         textarea.style.height = Math.min(textarea.scrollHeight, 100) + "px";
     }
     
-    // Media view functions
-    async function viewOnceMedia(media_id, is_image, event) {
-        event.stopPropagation();
-        
-        // First check if user can view this media
-        try {
-            const csrftoken = getCookie("csrftoken") || 
-                             document.querySelector('[name=csrfmiddlewaretoken]')?.value;
-            
-            const headers = {};
-            if (csrftoken) {
-                headers["X-CSRFToken"] = csrftoken;
-            }
-            
-            const response = await fetch(`/media/check/${media_id}/`, {
-                method: "POST",
-                headers: headers,
-                credentials: "same-origin"
-            });
-            
-            const data = await response.json();
-            
-            if (data.status === "ok") {
-                openMediaModal(data.view_url, is_image, data.filename);
-            } else {
-                alert("Error: " + data.message);
-            }
-        } catch (error) {
-            console.error("Error checking media:", error);
-            alert("Failed to load media");
-        }
-    }
-    
     function openMediaModal(url, is_image, filename) {
         const modal = document.getElementById("media-modal");
         const modalImg = document.getElementById("modal-media");
@@ -1863,6 +1959,7 @@
     window.onload = function() {
         autoResizeTextarea();
         scrollToBottom();
+        setMediaType("normal"); // Set default to normal
     };
 </script>
 {% endblock %}
