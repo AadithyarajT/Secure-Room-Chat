@@ -2,7 +2,7 @@
 
 SecureRoomChat is a An intermediary platform providing temporary, user-initiated communication services without permanent data retention.”, real-time chat application built using Django and WebSockets. 
  
-Don't Just Use you priceless asset to Information to just a simple chat with others
+Don't Just sell your priceless asset Information for just a simple chat with others
 
 The platform prioritizes simplicity, performance, and user privacy.
 
