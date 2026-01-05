@@ -1,7 +1,8 @@
 # SecureRoomChat
 
-SecureRoomChat is a privacy-focused, real-time chat application built using Django and WebSockets.  
-It is designed to provide secure, anonymous, and temporary communication without overwhelming users with unnecessary features.
+SecureRoomChat is a privacy-focused, real-time chat application built using Django and WebSockets. 
+ 
+It is designed to provide secure, anonymous, and temporary communication.
 
 The platform prioritizes simplicity, performance, and user privacy.
 
@@ -38,7 +39,7 @@ Chats are temporary by design, and users can participate with or without registr
 ## User Capabilities
 
 - Create and join public or private rooms  
-- Participate in direct chats  
+- Participate in direct chats with friends 
 - View and edit profile  
 - Hide profile or username  
 - Add and manage friends  
@@ -52,7 +53,7 @@ Chats are temporary by design, and users can participate with or without registr
 
 - View and manage complaints and bug reports  
 - Send replies and notifications  
-- Create and manage global, regional, and event-based rooms  
+- Create and manage global, regional, and special rooms.
 
 ---
 
