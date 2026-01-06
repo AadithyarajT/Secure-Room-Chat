@@ -14,23 +14,30 @@ urlpatterns = [
         views.verify_room_password,
         name="verify_room_password",
     ),
+    # E2EE Encryption API endpoints - ADD THESE
+    path("api/upload-public-key/", views.upload_public_key, name="upload_public_key"),
+    re_path(
+        r"^api/get-room-key/(?P<room_id>[\w-]+)/$",
+        views.get_room_key,
+        name="get_room_key",
+    ),
+    re_path(
+        r"^api/upload-room-key/(?P<room_id>[\w-]+)/$",
+        views.upload_room_key,
+        name="upload_room_key",
+    ),
+    # ... rest of your existing URLs ...
     path(
         "debug/dm-status/<uuid:room_id>/", views.check_dm_status, name="check_dm_status"
     ),
     # User management
     path("logout/", views.logout_view, name="logout"),
+    # Media endpoints
     path("upload-once/", views.upload_once_view_media, name="upload_once"),
     path("media/once/<uuid:media_id>/", views.view_once_media, name="view_once"),
     path("media/check/<uuid:media_id>/", views.get_media_for_view, name="check_media"),
     path("upload-media/", views.upload_media, name="upload_media"),
     path("media/view/<uuid:media_id>/", views.view_media, name="view_media"),
-    path("media/check/<uuid:media_id>/", views.get_media_for_view, name="check_media"),
-    path(
-        "media/permanent/<uuid:media_id>/",
-        views.get_permanent_media_url,
-        name="permanent_media",
-    ),
-    path("admin/cleanup-media/", views.cleanup_expired_media, name="cleanup_media"),
     path(
         "media/permanent/<uuid:media_id>/",
         views.get_permanent_media_url,

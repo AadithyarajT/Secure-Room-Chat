@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}{{ room_name }} | SimpleChat{% endblock %}
 
@@ -22,6 +23,7 @@
         overflow: hidden;
         margin: 0;
         border-radius: 0;
+        position: relative; /* Add this */
     }
     
     /* Chat Header */
@@ -130,7 +132,7 @@
                 rgba(255,255,255,0.03) 10px,
                 rgba(255,255,255,0.03) 20px
             );
-        user-select: none;
+        padding-bottom: 100px; /* Space for floating input */
     }
     
     /* Messages */
@@ -141,7 +143,6 @@
         max-width: 100%;
         width: 100%;
         animation: slideIn 0.3s ease;
-        user-select: none;
     }
     
     @keyframes slideIn {
@@ -192,7 +193,6 @@
         transition: all 0.2s;
         position: relative;
         word-wrap: break-word;
-        user-select: none;
     }
     
     .message.own .message-bubble {
@@ -292,7 +292,7 @@
         flex-wrap: wrap;
     }
     
-    .reactions span {
+    .reaction {
         background: rgba(76, 175, 80, 0.1);
         padding: 3px 8px;
         border-radius: 12px;
@@ -300,10 +300,21 @@
         display: inline-flex;
         align-items: center;
         gap: 3px;
+        cursor: pointer;
+        transition: all 0.2s;
     }
     
-    .message.own .reactions span {
+    .reaction:hover {
+        background: rgba(76, 175, 80, 0.2);
+        transform: scale(1.05);
+    }
+    
+    .message.own .reaction {
         background: rgba(255,255,255,0.3);
+    }
+    
+    .message.own .reaction:hover {
+        background: rgba(255,255,255,0.4);
     }
     
     /* Join Notifications */
@@ -320,23 +331,125 @@
     
     /* Input Area */
     .chat-input-area {
-        padding: 20px 25px;
+        position: fixed; /* Changed from absolute to fixed for better positioning */
+        bottom: 20px; /* Distance from bottom */
+        left: 50%;
+        transform: translateX(-50%);
+        width: 85%; /* Adjust width as needed */
+        max-width: 800px; /* Maximum width */
         background: white;
-        border-top: 1px solid #e9ecef;
+        padding: 12px 20px;
+        border-radius: 25px;
+        box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1), 
+                    0 4px 20px rgba(0, 0, 0, 0.15); /* Shadow on all sides */
+        border: 1px solid #e0e0e0;
         display: flex;
+        flex-direction: column;
         gap: 12px;
-        align-items: flex-end;
+        z-index: 100;
+        animation: slideUp 0.3s ease;
     }
     
+    /* Selected File Indicator */
+    .selected-file-indicator {
+        display: none;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        padding: 12px 15px;
+        border-radius: 10px;
+        margin-bottom: 10px;
+        border-left: 4px solid #4caf50;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        animation: slideDown 0.3s ease;
+    }
+    
+    .selected-file-indicator.show {
+        display: flex;
+    }
+    
+    .file-info {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+    }
+    
+    .file-details {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    #selected-file-name {
+        font-weight: 500;
+        font-size: 14px;
+    }
+    
+    .media-type-toggle {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    
+    .toggle-buttons {
+        display: flex;
+        gap: 3px;
+        background: #e9ecef;
+        padding: 3px;
+        border-radius: 6px;
+    }
+    
+    .toggle-btn {
+        background: transparent;
+        color: #6c757d;
+        border: none;
+        padding: 5px 10px;
+        border-radius: 4px;
+        font-size: 11px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .toggle-btn.active {
+        background: #4caf50;
+        color: white;
+        font-weight: 600;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .toggle-btn:hover {
+        transform: translateY(-1px);
+    }
+    
+    .clear-file {
+        background: #dc3545;
+        color: white;
+        border: none;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        cursor: pointer;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+    }
+    
+    .clear-file:hover {
+        background: #c82333;
+        transform: scale(1.1);
+    }
+    
+    /* Main Input Area */
     .input-wrapper {
-        flex: 1;
         display: flex;
         align-items: center;
         background: #f8f9fa;
         border-radius: 25px;
-        padding: 10px 15px;
+        padding: 8px 15px;
         border: 2px solid transparent;
         transition: all 0.3s;
+        flex: 1;
     }
     
     .input-wrapper:focus-within {
@@ -399,38 +512,6 @@
     
     .send-btn:active {
         transform: scale(0.95);
-    }
-    
-    /* Selected File Indicator */
-    .selected-file-indicator {
-        display: none;
-        background: #e8f5e9;
-        padding: 8px 15px;
-        border-radius: 8px;
-        font-size: 13px;
-        color: #2c3e50;
-        align-items: center;
-        gap: 10px;
-        margin-bottom: 10px;
-    }
-    
-    .selected-file-indicator.show {
-        display: flex;
-    }
-    
-    .clear-file {
-        background: #e74c3c;
-        color: white;
-        border: none;
-        padding: 4px 10px;
-        border-radius: 4px;
-        cursor: pointer;
-        font-size: 12px;
-        font-weight: 600;
-    }
-    
-    .clear-file:hover {
-        background: #c0392b;
     }
     
     /* Emoji Picker */
@@ -756,6 +837,30 @@
         background: #45a049;
     }
     
+    /* E2EE Indicator */
+    #e2ee-indicator {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        background: rgba(76, 175, 80, 0.2);
+        padding: 5px 10px;
+        border-radius: 6px;
+        font-size: 12px;
+        color: white;
+        margin-left: 10px;
+    }
+    
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
     @media (max-width: 768px) {
         .message {
             max-width: 85%;
@@ -779,68 +884,6 @@
             display: none;
         }
     }
-    .toggle-btn.active {
-        background: #4caf50 !important;
-        color: white !important;
-        font-weight: bold;
-    }
-    
-    .media-type-toggle {
-        animation: slideDown 0.3s ease;
-    }
-    
-    @keyframes slideDown {
-        from {
-            opacity: 0;
-            transform: translateY(-10px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-    .selected-file-indicator {
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-        padding: 12px 15px;
-        border-radius: 10px;
-        margin-bottom: 10px;
-        border-left: 4px solid #4caf50;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        animation: slideDown 0.3s ease;
-    }
-    
-    .toggle-btn.active {
-        background: #4caf50 !important;
-        color: white !important;
-        font-weight: 600;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    
-    .toggle-btn:not(.active) {
-        background: transparent !important;
-        color: #6c757d !important;
-    }
-    
-    .toggle-btn:hover {
-        transform: translateY(-1px);
-    }
-    
-    @keyframes slideDown {
-        from {
-            opacity: 0;
-            transform: translateY(-10px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-    
-    .clear-file:hover {
-        background: #c82333 !important;
-        transform: scale(1.1);
-    }
-</style>
 </style>
 {% endblock %}
 
@@ -872,46 +915,48 @@
             <button class="header-btn delete" onclick="closeRoom()">
                 🗑️ <span>Delete</span>
             </button>
+            <!-- In chat-header-actions, add this button -->
+            <button class="header-btn" id="e2ee-toggle-btn" onclick="toggleE2EE()">
+                🔒 <span id="e2ee-status-text">Encryption: Off</span>
+            </button>
         </div>
     </div>
     
     <!-- Messages Area -->
     <div id="chat-messages"></div>
-     
-<!-- In chat.html - Add media type toggle in the input area -->
-        <div class="chat-input-area">
-            <!-- Selected File Indicator with Type Toggle -->
-            <div class="selected-file-indicator" id="selected-file-indicator" style="display: none;">
-                <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <span id="selected-file-name" style="font-weight: 500; font-size: 14px;"></span>
-                        <div class="media-type-toggle" style="display: flex; align-items: center; gap: 5px;">
-                            <span style="font-size: 12px; color: #6c757d;">Send as:</span>
-                            <div class="toggle-buttons" style="display: flex; gap: 3px; background: #e9ecef; padding: 3px; border-radius: 6px;">
-                                <button class="toggle-btn active" data-type="normal" onclick="setMediaType('normal')" 
-                                        style="background: #4caf50; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 11px; cursor: pointer; transition: all 0.2s;">
-                                    🔓 Normal
-                                </button>
-                                <button class="toggle-btn" data-type="once" onclick="setMediaType('once')"
-                                        style="background: transparent; color: #6c757d; border: none; padding: 5px 10px; border-radius: 4px; font-size: 11px; cursor: pointer; transition: all 0.2s;">
-                                    🔒 View Once
-                                </button>
-                            </div>
+    
+    <!-- Chat Input Area -->
+    <div class="chat-input-area">
+        <!-- Selected File Indicator -->
+        <div class="selected-file-indicator" id="selected-file-indicator">
+            <div class="file-info">
+                <div class="file-details">
+                    <span id="selected-file-name"></span>
+                    <div class="media-type-toggle">
+                        <span style="font-size: 12px; color: #6c757d;">Send as:</span>
+                        <div class="toggle-buttons">
+                            <button class="toggle-btn active" data-type="normal" onclick="setMediaType('normal')">
+                                🔓 Normal
+                            </button>
+                            <button class="toggle-btn" data-type="once" onclick="setMediaType('once')">
+                                🔒 View Once
+                            </button>
                         </div>
                     </div>
-                    <button class="clear-file" onclick="clearSelectedFile()" 
-                            style="background: #dc3545; color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center;">
-                        ✕
-                    </button>
                 </div>
+                <button class="clear-file" onclick="clearSelectedFile()">
+                    ✕
+                </button>
             </div>
-            
-            <!-- Main Input Area -->
+        </div>
+        
+        <!-- Main Input Area -->
+        <div style="display: flex; gap: 12px; align-items: flex-end;">
             <div class="input-wrapper">
                 <label for="media-upload" class="media-upload-label" title="Attach media">
                     📎
                 </label>
-                <input type="file" id="media-upload" accept="image/*,video/*" style="display: none;">
+                <input type="file" id="media-upload" accept="image/*,video/*">
                 
                 <textarea 
                     id="message-input" 
@@ -926,6 +971,7 @@
             </button>
         </div>
     </div>
+</div>
 
 <!-- Emoji Picker -->
 <div id="emoji-picker">
@@ -956,6 +1002,10 @@
     <div class="context-menu-item" onclick="editMessage()">
         <span class="context-menu-icon">✏️</span>
         <span>Edit</span>
+    </div>
+    <div class="context-menu-item" onclick="replyToMessage()">
+        <span class="context-menu-icon">↩️</span>
+        <span>Reply</span>
     </div>
     <div class="context-menu-item danger" onclick="deleteMessage()">
         <span class="context-menu-icon">🗑️</span>
@@ -996,327 +1046,405 @@
     <div class="redirect-countdown" id="redirect-countdown">5</div>
 </div>
 
+<script src="{% static 'js/encryption.js' %}"></script>
 <script>
-    const roomId = "{{ room_id }}";
-    const username = "{{ username }}";
-    const isDM = {{ is_dm|lower }};
-    
-    let selectedMsgId = null;
-    let messageCache = new Map();
-    let viewedMedia = new Set();
-    let redirectTimer = null;
-    let isMediaSelected = false;
-    let selectedFile = null;
-    let hasJoinedNotified = localStorage.getItem(`joined_${roomId}`) === "true";
-    let longPressTimer = null;
-    let selectedMessageContent = "";
-    let selectedMessageElement = null;
-    let editingMessageId = null;
-    let currentMediaType = "normal"; // Default to normal
+// ==================== VARIABLES ====================
+const roomId = "{{ room_id }}";
+const username = "{{ username }}";
+const isDM = {{ is_dm|lower }};
 
-    // WebSocket connection
-    const protocol = window.location.protocol === "https:" ? "wss://" : "ws://";
-    const chatSocket = new WebSocket(
-        protocol + window.location.host + "/ws/chat/" + roomId + "/"
-    );
-    
-    chatSocket.onopen = () => {
-        console.log("✅ WebSocket connected!");
-        if (!hasJoinedNotified) {
-            hasJoinedNotified = true;
-            localStorage.setItem(`joined_${roomId}`, "true");
-        }
-    };
-    
-    chatSocket.onclose = (e) => {
-        console.log("❌ WebSocket disconnected:", e.code, e.reason);
-    };
-    
-    chatSocket.onerror = (error) => {
-        console.log("❌ WebSocket error:", error);
-    };
-    
-    chatSocket.onmessage = function(e) {
-        console.log("📨 Raw WebSocket message:", e.data);
-        try {
-            const data = JSON.parse(e.data);
-            
-            if (data.type === "history") {
-                console.log("📚 History received:", data.messages?.length || 0, "messages");
-                const chatDiv = document.getElementById("chat-messages");
-                chatDiv.innerHTML = "";
-                messageCache.clear();
-                
-                if (data.messages && Array.isArray(data.messages)) {
-                    data.messages.forEach((msg) => {
-                        if (!messageCache.has(msg.id)) {
-                            addMessage(
-                                msg.id,
-                                msg.username,
-                                msg.message,
-                                msg.reactions || {},
-                                msg.is_media || false,
-                                msg.media_id || "",
-                                msg.filename || "",
-                                msg.is_image || false,
-                                msg.is_edited || false,
-                                msg.is_deleted || false,
-                                msg.media_type || "once" // Make sure this is passed
-                            );
-                            messageCache.set(msg.id, true);
-                        }
-                    });
-                }
-                scrollToBottom();
-            } else if (data.type === "message") {
-                console.log("💬 New message received:", data);
-                if (!messageCache.has(data.id)) {
-                    addMessage(
-                        data.id,
-                        data.username,
-                        data.message,
-                        {},  // reactions
-                        data.is_media || false,
-                        data.media_id || "",
-                        data.filename || "",
-                        data.is_image || false,
-                        false,
-                        false,
-                        data.media_type || "once" // Make sure this is passed
-                    );
-                    messageCache.set(data.id, true);
-                    scrollToBottom();
-                }
-            } else if (data.type === "message_edited") {
-                console.log("✏️ Message edited:", data);
-                updateMessageContent(data.msg_id, data.message, true);
-            } else if (data.type === "message_deleted") {
-                console.log("🗑️ Message deleted:", data);
-                updateMessageContent(data.msg_id, "[This message was deleted]", false, true);
-            } else if (data.type === "message_unsent") {
-                console.log("↩️ Message unsent:", data);
-                removeMessage(data.msg_id);
-            } else if (data.type === "reaction_update") {
-                console.log("😀 Reaction update:", data);
-                updateReactions(data.msg_id, data.reactions || {});
-            } else if (data.type === "notification") {
-                const notifyDiv = document.createElement("div");
-                notifyDiv.className = "notification-message";
-                notifyDiv.textContent = data.message;
-                document.getElementById("chat-messages").appendChild(notifyDiv);
-                scrollToBottom();
-            } else if (data.type === "room_closed") {
-                console.log("🚪 Room closed:", data);
-                if (data.redirect) {
-                    startRedirectCountdown(data.message);
-                }
-                chatSocket.close();
-            }
-        } catch (err) {
-            console.error("❌ Error parsing message:", err, e.data);
-        }
-    };
+let selectedMsgId = null;
+let messageCache = new Map();
+let viewedMedia = new Set();
+let redirectTimer = null;
+let isMediaSelected = false;
+let selectedFile = null;
+let hasJoinedNotified = localStorage.getItem(`joined_${roomId}`) === "true";
+let selectedMessageContent = "";
+let selectedMessageElement = null;
+let editingMessageId = null;
+let currentMediaType = "normal";
+let e2eeEnabled = true;
+let e2eeReady = false;
 
-    // Media Type Functions
-    function setMediaType(type) {
-        currentMediaType = type;
-        
-        // Update toggle buttons
-        document.querySelectorAll('.toggle-btn').forEach(btn => {
-            btn.classList.remove('active');
-            if (btn.dataset.type === type) {
-                btn.classList.add('active');
-            }
-        });
-        
-        console.log(`Media type set to: ${type}`);
+// WebSocket connection
+const protocol = window.location.protocol === "https:" ? "wss://" : "ws://";
+const chatSocket = new WebSocket(
+    protocol + window.location.host + "/ws/chat/" + roomId + "/"
+);
+
+// ==================== WEBSOCKET HANDLERS ====================
+chatSocket.onopen = () => {
+    console.log("✅ WebSocket connected!");
+    if (!hasJoinedNotified) {
+        hasJoinedNotified = true;
+        localStorage.setItem(`joined_${roomId}`, "true");
     }
+};
 
-    // Handle file selection
-    document.getElementById("media-upload").addEventListener("change", function() {
-        if (this.files.length > 0) {
-            selectedFile = this.files[0];
-            const indicator = document.getElementById("selected-file-indicator");
-            const nameSpan = document.getElementById("selected-file-name");
+chatSocket.onclose = (e) => {
+    console.log("❌ WebSocket disconnected:", e.code, e.reason);
+};
+
+chatSocket.onerror = (error) => {
+    console.log("❌ WebSocket error:", error);
+};
+
+chatSocket.onmessage = async function(e) {
+    console.log("📨 Raw WebSocket message:", e.data);
+    try {
+        const data = JSON.parse(e.data);
+        
+        if (data.type === "history") {
+            console.log("📚 History received:", data.messages?.length || 0, "messages");
+            const chatDiv = document.getElementById("chat-messages");
+            chatDiv.innerHTML = "";
+            messageCache.clear();
             
-            const icon = selectedFile.type.startsWith("image/") ? "🖼️" : "🎬";
-            nameSpan.textContent = `${icon} ${selectedFile.name}`;
-            
-            // Show the indicator
-            indicator.style.display = "block";
-            isMediaSelected = true;
-            
-            // Set default media type to normal for all files
-            setMediaType("normal");
-            
-            // Show file size
-            const sizeInMB = (selectedFile.size / (1024 * 1024)).toFixed(2);
-            nameSpan.innerHTML += ` <span style="font-size: 11px; color: #6c757d; margin-left: 5px;">(${sizeInMB} MB)</span>`;
+            if (data.messages && Array.isArray(data.messages)) {
+                for (const msg of data.messages) {
+                    if (!messageCache.has(msg.id)) {
+                        await addMessage(
+                            msg.id,
+                            msg.username,
+                            msg.message,
+                            msg.reactions || {},
+                            msg.is_media || false,
+                            msg.media_id || "",
+                            msg.filename || "",
+                            msg.is_image || false,
+                            msg.is_edited || false,
+                            msg.is_deleted || false,
+                            msg.media_type || "once",
+                            msg.encrypted || false
+                        );
+                        messageCache.set(msg.id, true);
+                    }
+                }
+            }
+            scrollToBottom();
+        } else if (data.type === "message") {
+            console.log("💬 New message received:", data);
+            if (!messageCache.has(data.id)) {
+                await addMessage(
+                    data.id,
+                    data.username,
+                    data.message,
+                    data.reactions || {},
+                    data.is_media || false,
+                    data.media_id || "",
+                    data.filename || "",
+                    data.is_image || false,
+                    false,
+                    false,
+                    data.media_type || "once",
+                    data.encrypted || false  // Make sure this is passed
+                );
+                messageCache.set(data.id, true);
+                scrollToBottom();
+            }
+        } else if (data.type === "message_edited") {
+            console.log("✏️ Message edited:", data);
+            // Pass the encrypted flag if available
+            await updateMessageContent(data.msg_id, data.message, true, false);
+        } else if (data.type === "message_deleted") {
+            console.log("🗑️ Message deleted:", data);
+            updateMessageContent(data.msg_id, "[This message was deleted]", false, true);
+        } else if (data.type === "message_unsent") {
+            console.log("↩️ Message unsent:", data);
+            removeMessage(data.msg_id);
+        } else if (data.type === "reaction_update") {
+            console.log("😀 Reaction update:", data);
+            updateReactions(data.msg_id, data.reactions || {});
+        } else if (data.type === "notification") {
+            const notifyDiv = document.createElement("div");
+            notifyDiv.className = "notification-message";
+            notifyDiv.textContent = data.message;
+            document.getElementById("chat-messages").appendChild(notifyDiv);
+            scrollToBottom();
+        } else if (data.type === "room_closed") {
+            console.log("🚪 Room closed:", data);
+            if (data.redirect) {
+                startRedirectCountdown(data.message);
+            }
+            chatSocket.close();
+        }
+    } catch (err) {
+        console.error("❌ Error parsing message:", err, e.data);
+    }
+};
+
+// ==================== E2EE FUNCTIONS ====================
+
+async function initializeE2EE() {
+    try {
+        console.log('🔐 Auto-initializing E2EE...');
+        
+        // Ensure E2EE is enabled
+        e2eeEnabled = true;
+        
+        // Initialize E2EE manager
+        await e2eeManager.initialize();
+        e2eeReady = true;
+        
+        // Automatically get room key
+        await e2eeManager.getRoomKey(roomId);
+        
+        console.log('✅ E2EE auto-initialized and enabled');
+        showE2EEIndicator(true);
+        return true;
+        
+    } catch (error) {
+        console.error('❌ E2EE auto-initialization failed:', error);
+        e2eeEnabled = false;
+        e2eeReady = false;
+        showE2EEIndicator(false);
+        throw error;
+    }
+}
+function showE2EEIndicator(enabled) {
+    const headerLeft = document.querySelector('.chat-header-left');
+    const existingIndicator = document.getElementById('e2ee-indicator');
+    
+    if (existingIndicator) {
+        existingIndicator.remove();
+    }
+    
+    const indicator = document.createElement('div');
+    indicator.id = 'e2ee-indicator';
+    indicator.style.cssText = `
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        background: ${enabled ? 'rgba(76, 175, 80, 0.2)' : 'rgba(255, 152, 0, 0.2)'};
+        padding: 5px 10px;
+        border-radius: 6px;
+        font-size: 12px;
+        color: white;
+    `;
+    
+    {% comment %} indicator.innerHTML = `
+        <span>${enabled ? '🔒' : '⚠️'}</span>
+        <span>${enabled ? 'Encrypted' : 'Not Encrypted'}</span>
+    `; {% endcomment %}
+    
+    indicator.title = enabled 
+        ? 'Messages are end-to-end encrypted' 
+        : 'Encryption not available';
+    
+    if (headerLeft) {
+        headerLeft.appendChild(indicator);
+    }
+}
+
+// ==================== MEDIA FUNCTIONS ====================
+function setMediaType(type) {
+    currentMediaType = type;
+    document.querySelectorAll('.toggle-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.type === type) {
+            btn.classList.add('active');
         }
     });
+    console.log(`Media type set to: ${type}`);
+}
 
-    function clearSelectedFile() {
-        document.getElementById("media-upload").value = "";
-        document.getElementById("selected-file-indicator").style.display = "none";
-        selectedFile = null;
-        isMediaSelected = false;
+document.getElementById("media-upload").addEventListener("change", function() {
+    if (this.files.length > 0) {
+        selectedFile = this.files[0];
+        const indicator = document.getElementById("selected-file-indicator");
+        const nameSpan = document.getElementById("selected-file-name");
         
-        // Reset media type to default
-        currentMediaType = "normal";
+        const icon = selectedFile.type.startsWith("image/") ? "🖼️" : "🎬";
+        nameSpan.textContent = `${icon} ${selectedFile.name}`;
+        indicator.classList.add("show");
+        isMediaSelected = true;
+        
         setMediaType("normal");
+        
+        const sizeInMB = (selectedFile.size / (1024 * 1024)).toFixed(2);
+        nameSpan.innerHTML += ` <span style="font-size: 11px; color: #6c757d; margin-left: 5px;">(${sizeInMB} MB)</span>`;
     }
+});
 
-    // Handle send (text or media)
-    async function handleSend() {
-        if (isMediaSelected && selectedFile) {
-            await uploadMedia();
-        } else {
-            sendMessage();
-        }
+function clearSelectedFile() {
+    document.getElementById("media-upload").value = "";
+    document.getElementById("selected-file-indicator").classList.remove("show");
+    selectedFile = null;
+    isMediaSelected = false;
+    currentMediaType = "normal";
+    setMediaType("normal");
+}
+
+// ==================== MESSAGE FUNCTIONS ====================
+async function handleSend() {
+    if (isMediaSelected && selectedFile) {
+        await uploadMedia();
+    } else {
+        await sendMessage();
     }
+}
+
+async function sendMessage() {
+    const input = document.getElementById("message-input");
+    const msg = input.value.trim();
     
-    function sendMessage() {
-        const input = document.getElementById("message-input");
-        const msg = input.value.trim();
-        if (msg) {
-            console.log("📤 Sending message:", msg);
-            chatSocket.send(JSON.stringify({
-                type: "message",
-                message: msg,
-                username: username,
-            }));
-            input.value = "";
-            autoResizeTextarea();
-        }
-    }
-    
-    // Upload media function
-    async function uploadMedia() {
-        if (!selectedFile) {
-            alert("No file selected!");
-            return;
-        }
+    if (msg) {
+        let messageToSend = msg;
         
-        console.log("📎 Uploading file:", selectedFile.name, "Type:", currentMediaType);
-        
-        const formData = new FormData();
-        formData.append("file", selectedFile);
-        formData.append("room_id", roomId);
-        formData.append("media_type", currentMediaType);
-        
-        let csrftoken = getCookie("csrftoken");
-        const csrfInput = document.querySelector("[name=csrfmiddlewaretoken]");
-        if (csrfInput) {
-            csrftoken = csrfInput.value;
-        }
-        
-        const headers = {};
-        if (csrftoken) {
-            headers["X-CSRFToken"] = csrftoken;
-        }
-        
-        try {
-            // Use the new endpoint
-            const res = await fetch("/upload-media/", {
-                method: "POST",
-                body: formData,
-                headers: headers,
-                credentials: "same-origin",
-            });
-            
-            if (res.status === 403) {
-                alert("CSRF error. Please refresh the page and try again.");
+        if (e2eeEnabled && e2eeReady) {
+            try {
+                messageToSend = await e2eeManager.encryptMessage(roomId, msg);
+            } catch (error) {
+                console.error('Encryption failed:', error);
+                showToast('⚠️ Message encryption failed');
                 return;
             }
-            
-            const data = await res.json();
-            console.log("📎 Upload response:", data);
-            
-            if (data.status === "ok") {
-                const messageData = {
-                    type: "message",
-                    message: `📎 ${selectedFile.name}`,
-                    username: username,
-                    is_media: true,
-                    media_id: data.media_id,
-                    filename: selectedFile.name,
-                    is_image: data.is_image,
-                    media_type: currentMediaType
-                };
-                
-                if (chatSocket.readyState === WebSocket.OPEN) {
-                    chatSocket.send(JSON.stringify(messageData));
-                }
-                
-                clearSelectedFile();
-            } else {
-                alert("Upload failed: " + data.error);
-            }
-        } catch (error) {
-            console.error("❌ Upload error:", error);
-            alert("Upload failed! Check console.");
         }
+        
+        console.log("📤 Sending message:", e2eeEnabled ? 'encrypted' : 'plain');
+        chatSocket.send(JSON.stringify({
+            type: "message",
+            message: messageToSend,
+            username: username,
+            encrypted: e2eeEnabled && e2eeReady
+        }));
+        
+        input.value = "";
+        autoResizeTextarea();
+    }
+}
+
+async function uploadMedia() {
+    if (!selectedFile) {
+        alert("No file selected!");
+        return;
     }
     
-    // Add message to chat
-    function addMessage(id, user, text, reactions, is_media = false, media_id = "", filename = "", is_image = false, is_edited = false, is_deleted = false, media_type = "once") {
-        const chatDiv = document.getElementById("chat-messages");
+    console.log("📎 Uploading file:", selectedFile.name, "Type:", currentMediaType);
+    
+    const formData = new FormData();
+    formData.append("file", selectedFile);
+    formData.append("room_id", roomId);
+    formData.append("media_type", currentMediaType);
+    
+    let csrftoken = getCookie("csrftoken");
+    const csrfInput = document.querySelector("[name=csrfmiddlewaretoken]");
+    if (csrfInput) {
+        csrftoken = csrfInput.value;
+    }
+    
+    const headers = {};
+    if (csrftoken) {
+        headers["X-CSRFToken"] = csrftoken;
+    }
+    
+    try {
+        const res = await fetch("/upload-media/", {
+            method: "POST",
+            body: formData,
+            headers: headers,
+            credentials: "same-origin",
+        });
         
-        const existingMsg = document.querySelector(`[data-msg-id="${id}"]`);
-        if (existingMsg) {
-            updateReactions(id, reactions);
+        if (res.status === 403) {
+            alert("CSRF error. Please refresh the page and try again.");
             return;
         }
         
-        const msgDiv = document.createElement("div");
-        msgDiv.className = `message ${user === username ? 'own' : ''}`;
-        msgDiv.dataset.msgId = id;
-        msgDiv.dataset.username = user;
-        msgDiv.dataset.messageText = text;
-        msgDiv.dataset.isDeleted = is_deleted;
-        msgDiv.dataset.isMedia = is_media;
-        if (is_media && media_id) {
-            msgDiv.dataset.mediaId = media_id;
-            msgDiv.dataset.mediaType = media_type;
-        }
+        const data = await res.json();
+        console.log("📎 Upload response:", data);
         
-        // Add click handler to select message and show context menu (for own messages)
-        if (user === username) {
-            msgDiv.onclick = (e) => {
-                if (e.target.classList.contains("view-media-btn") || 
-                    e.target.closest(".view-media-btn") ||
-                    e.target.closest(".context-menu")) {
-                    return;
-                }
-                
-                e.preventDefault();
-                e.stopPropagation();
-                
-                // Deselect other messages
-                document.querySelectorAll('.message.selected').forEach(m => {
-                    m.classList.remove('selected');
-                });
-                
-                // Select this message
-                msgDiv.classList.add('selected');
-                selectedMessageElement = msgDiv;
-                selectedMsgId = id;
-                selectedMessageContent = msgDiv.dataset.messageText || text;
-                
-                console.log("✅ Message selected:", {
-                    id: selectedMsgId,
-                    content: selectedMessageContent,
-                    username: user
-                });
-                
-                // Show context menu at message position
-                const rect = msgDiv.getBoundingClientRect();
-                showContextMenu(rect.right - 200, rect.top);
+        if (data.status === "ok") {
+            const messageData = {
+                type: "message",
+                message: `📎 ${selectedFile.name}`,
+                username: username,
+                is_media: true,
+                media_id: data.media_id,
+                filename: selectedFile.name,
+                is_image: data.is_image,
+                media_type: currentMediaType
             };
+            
+            if (chatSocket.readyState === WebSocket.OPEN) {
+                chatSocket.send(JSON.stringify(messageData));
+            }
+            
+            clearSelectedFile();
+        } else {
+            alert("Upload failed: " + data.error);
         }
-        
-        // Right-click for emoji reactions
-        msgDiv.oncontextmenu = (e) => {
+    } catch (error) {
+        console.error("❌ Upload error:", error);
+        alert("Upload failed! Check console.");
+    }
+}
+
+async function addMessage(id, user, text, reactions, is_media = false, media_id = "", filename = "", is_image = false, is_edited = false, is_deleted = false, media_type = "once", encrypted = false) {
+    const chatDiv = document.getElementById("chat-messages");
+    
+    const existingMsg = document.querySelector(`[data-msg-id="${id}"]`);
+    if (existingMsg) {
+        updateReactions(id, reactions);
+        return;
+    }
+    
+    let displayText = text;
+    
+    // IMPORTANT: Decrypt message if it's encrypted
+    if (encrypted && e2eeEnabled && e2eeReady && !is_media) {
+        try {
+            console.log('🔓 Decrypting message:', id);
+            displayText = await e2eeManager.decryptMessage(roomId, text);
+        } catch (error) {
+            console.error('❌ Decryption failed:', error);
+            displayText = '🔒 [Encrypted message - unable to decrypt]';
+        }
+    } else if (encrypted && !e2eeReady) {
+        // E2EE not ready yet, show placeholder
+        displayText = '🔒 [Encrypted - initializing...]';
+        // Try to initialize E2EE and decrypt
+        setTimeout(async () => {
+            if (e2eeEnabled && !e2eeReady) {
+                await initializeE2EE();
+                if (e2eeReady) {
+                    // Try to decrypt again
+                    const msgElement = document.querySelector(`[data-msg-id="${id}"]`);
+                    if (msgElement) {
+                        try {
+                            const decryptedText = await e2eeManager.decryptMessage(roomId, text);
+                            const bubble = msgElement.querySelector('.message-bubble');
+                            if (bubble) {
+                                bubble.textContent = decryptedText;
+                                msgElement.dataset.messageText = decryptedText;
+                            }
+                        } catch (error) {
+                            console.error('Retry decryption failed:', error);
+                        }
+                    }
+                }
+            }
+        }, 1000);
+    }
+    
+    const msgDiv = document.createElement("div");
+    msgDiv.className = `message ${user === username ? 'own' : ''}`;
+    msgDiv.dataset.msgId = id;
+    msgDiv.dataset.username = user;
+    msgDiv.dataset.messageText = displayText;
+    msgDiv.dataset.isDeleted = is_deleted;
+    msgDiv.dataset.isMedia = is_media;
+    msgDiv.dataset.encrypted = encrypted || false;
+    
+    if (is_media && media_id) {
+        msgDiv.dataset.mediaId = media_id;
+        msgDiv.dataset.mediaType = media_type;
+    }
+    
+    // Add click handler for own messages
+    if (user === username) {
+        msgDiv.onclick = (e) => {
             if (e.target.classList.contains("view-media-btn") || 
                 e.target.closest(".view-media-btn")) {
                 return;
@@ -1325,201 +1453,510 @@
             e.preventDefault();
             e.stopPropagation();
             
-            selectedMsgId = id;
+            document.querySelectorAll('.message.selected').forEach(m => {
+                m.classList.remove('selected');
+            });
+            
+            msgDiv.classList.add('selected');
             selectedMessageElement = msgDiv;
-            selectedMessageContent = msgDiv.dataset.messageText || text;
+            selectedMsgId = id;
+            selectedMessageContent = msgDiv.dataset.messageText || displayText;
             
-            const picker = document.getElementById("emoji-picker");
-            closeContextMenu();
-            
-            picker.style.display = "block";
-            const pickerRect = picker.getBoundingClientRect();
-            
-            let left = e.clientX;
-            let top = e.clientY;
-            
-            if (left + pickerRect.width > window.innerWidth) {
-                left = window.innerWidth - pickerRect.width - 10;
-            }
-            if (top + pickerRect.height > window.innerHeight) {
-                top = window.innerHeight - pickerRect.height - 10;
-            }
-            if (left < 10) left = 10;
-            if (top < 10) top = 10;
-            
-            picker.style.left = left + "px";
-            picker.style.top = top + "px";
+            const rect = msgDiv.getBoundingClientRect();
+            showContextMenu(rect.right - 200, rect.top);
         };
-        
-        let content = '';
-        
-        if (user !== username) {
-            content += `<div class="message-sender">${user}</div>`;
+    }
+    
+    // Right-click for reactions
+    msgDiv.oncontextmenu = (e) => {
+        if (e.target.classList.contains("view-media-btn") || 
+            e.target.closest(".view-media-btn")) {
+            return;
         }
         
-        content += '<div class="message-bubble">';
+        e.preventDefault();
+        e.stopPropagation();
         
-        if (is_deleted) {
-            content += '<span class="message-deleted">[This message was deleted]</span>';
-        } else if (is_media && media_id) {
-            const icon = is_image ? "🖼️" : "🎬";
-            const fileType = is_image ? "Image" : "Video";
-            
-            // Use the media_type parameter that was passed
-            const actualMediaType = media_type || "once";
-            const typeLabel = actualMediaType === 'normal' ? '🔓 Normal' : '🔒 View Once';
-            
-            let buttonText = actualMediaType === "once" ? "🔓 ormal" : "🔓 View";
-            
-            content += `
-                <div class="media-container">
-                    <span class="media-icon">${icon}</span>
-                    <span style="font-size: 13px;">${fileType} • ${filename}</span>
-                    <span style="font-size: 11px; background: ${actualMediaType === 'normal' ? '#e8f5e9' : '#fff3e0'}; 
-                        color: ${actualMediaType === 'normal' ? '#2c3e50' : '#e65100'}; 
-                        padding: 2px 8px; border-radius: 4px; margin-left: 8px;">
-                        ${typeLabel}
-                    </span><br>
-                    <button class="view-media-btn" onclick="viewMedia('${media_id}', ${is_image}, '${actualMediaType}', event)">
-                        ${buttonText}
-                    </button>
-                </div>
-            `;
-        } else {
-            content += text || "";
+        selectedMsgId = id;
+        selectedMessageElement = msgDiv;
+        selectedMessageContent = msgDiv.dataset.messageText || displayText;
+        
+        const picker = document.getElementById("emoji-picker");
+        closeContextMenu();
+        
+        picker.style.display = "block";
+        const pickerRect = picker.getBoundingClientRect();
+        
+        let left = e.clientX;
+        let top = e.clientY;
+        
+        if (left + pickerRect.width > window.innerWidth) {
+            left = window.innerWidth - pickerRect.width - 10;
         }
-        
-        content += '</div>';
-        
-        if (is_edited && !is_deleted) {
-            content += '<div class="message-edited">(edited)</div>';
+        if (top + pickerRect.height > window.innerHeight) {
+            top = window.innerHeight - pickerRect.height - 10;
         }
+        if (left < 10) left = 10;
+        if (top < 10) top = 10;
         
-        msgDiv.innerHTML = content;
+        picker.style.left = left + "px";
+        picker.style.top = top + "px";
+    };
+    
+    let content = '';
+    
+    if (user !== username) {
+        content += `<div class="message-sender">${user}</div>`;
+    }
+    
+    content += '<div class="message-bubble">';
+    
+    if (is_deleted) {
+        content += '<span class="message-deleted">[This message was deleted]</span>';
+    } else if (is_media && media_id) {
+        const icon = is_image ? "🖼️" : "🎬";
+        const fileType = is_image ? "Image" : "Video";
+        const actualMediaType = media_type || "once";
+        const typeLabel = actualMediaType === 'normal' ? '📄 Normal' : '🔒 View Once';
+        let buttonText = actualMediaType === "once" ? "🔒 View" : "📄 View";
+        
+        content += `
+            <div class="media-container">
+                <span class="media-icon">${icon}</span>
+                <span style="font-size: 13px;">${fileType} • ${filename}</span>
+                <span style="font-size: 11px; background: ${actualMediaType === 'normal' ? '#e8f5e9' : '#fff3e0'}; 
+                    color: ${actualMediaType === 'normal' ? '#2c3e50' : '#e65100'}; 
+                    padding: 2px 8px; border-radius: 4px; margin-left: 8px;">
+                    ${typeLabel}
+                </span><br>
+                <button class="view-media-btn" onclick="viewMedia('${media_id}', ${is_image}, '${actualMediaType}', event)">
+                    ${buttonText}
+                </button>
+            </div>
+        `;
+    } else {
+        content += displayText || "";
+        if (encrypted) {
+            content += '<span style="margin-left: 8px; opacity: 0.6;" title="End-to-end encrypted">🔒</span>';
+        }
+    }
+    
+    content += '</div>';
+    
+    if (is_edited && !is_deleted) {
+        content += '<div class="message-edited">(edited)</div>';
+    }
+    
+    msgDiv.innerHTML = content;
+    
+    // Add reactions
+    if (reactions && Object.keys(reactions).length > 0) {
+        const reactionsDiv = document.createElement("div");
+        reactionsDiv.className = "reactions";
+        reactionsDiv.innerHTML = Object.entries(reactions)
+            .map(([emoji, count]) => `<span class="reaction" onclick="sendReaction('${emoji}')">${emoji} ${count}</span>`)
+            .join(" ");
+        msgDiv.appendChild(reactionsDiv);
+    }
+    
+    chatDiv.appendChild(msgDiv);
+}
+
+async function updateMessageContent(msgId, newContent, isEdited = false, isDeleted = false) {
+    const msg = document.querySelector(`[data-msg-id="${msgId}"]`);
+    if (msg) {
+        const bubble = msg.querySelector('.message-bubble');
+        if (bubble) {
+            let displayContent = newContent;
+            
+            // Check if this message was encrypted
+            const wasEncrypted = msg.dataset.encrypted === "true";
+            
+            // If message was encrypted and we have E2EE ready, try to decrypt
+            if (wasEncrypted && e2eeEnabled && e2eeReady && !isDeleted) {
+                try {
+                    displayContent = await e2eeManager.decryptMessage(roomId, newContent);
+                } catch (error) {
+                    console.error('❌ Edit decryption failed:', error);
+                    displayContent = '🔒 [Encrypted message - unable to decrypt]';
+                }
+            }
+            
+            if (isDeleted) {
+                bubble.innerHTML = '<span class="message-deleted">[This message was deleted]</span>';
+                msg.dataset.messageText = "[This message was deleted]";
+                msg.dataset.isDeleted = "true";
+            } else {
+                bubble.textContent = displayContent;
+                msg.dataset.messageText = displayContent;
+            }
+        }
+
+        
+        let editedIndicator = msg.querySelector('.message-edited');
+        if (isEdited && !isDeleted) {
+            if (!editedIndicator) {
+                editedIndicator = document.createElement('div');
+                editedIndicator.className = 'message-edited';
+                editedIndicator.textContent = '(edited)';
+                const reactionsDiv = msg.querySelector('.reactions');
+                if (reactionsDiv) {
+                    msg.insertBefore(editedIndicator, reactionsDiv);
+                } else {
+                    msg.appendChild(editedIndicator);
+                }
+            }
+        } else if (editedIndicator && isDeleted) {
+            editedIndicator.remove();
+        }
+    }
+}
+
+function removeMessage(msgId) {
+    const msg = document.querySelector(`[data-msg-id="${msgId}"]`);
+    if (msg) {
+        msg.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => {
+            msg.remove();
+            messageCache.delete(msgId);
+        }, 300);
+    }
+}
+
+function updateReactions(msgId, reactions) {
+    const msg = document.querySelector(`[data-msg-id="${msgId}"]`);
+    if (msg) {
+        let rDiv = msg.querySelector(".reactions");
+        
+        if (!rDiv) {
+            rDiv = document.createElement("div");
+            rDiv.className = "reactions";
+            msg.appendChild(rDiv);
+        }
         
         if (reactions && Object.keys(reactions).length > 0) {
-            const rDiv = document.createElement("div");
-            rDiv.className = "reactions";
             rDiv.innerHTML = Object.entries(reactions)
-                .map(([emoji, count]) => `<span>${emoji} ${count}</span>`)
+                .map(([emoji, count]) => `<span class="reaction" onclick="sendReaction('${emoji}')">${emoji} ${count}</span>`)
                 .join(" ");
-            msgDiv.appendChild(rDiv);
-        }
-        
-        chatDiv.appendChild(msgDiv);
-    }
-    
-    function updateMessageContent(msgId, newContent, isEdited = false, isDeleted = false) {
-        const msg = document.querySelector(`[data-msg-id="${msgId}"]`);
-        if (msg) {
-            const bubble = msg.querySelector('.message-bubble');
-            if (bubble) {
-                if (isDeleted) {
-                    bubble.innerHTML = '<span class="message-deleted">[This message was deleted]</span>';
-                    msg.dataset.messageText = "[This message was deleted]";
-                    msg.dataset.isDeleted = "true";
-                } else {
-                    bubble.textContent = newContent;
-                    msg.dataset.messageText = newContent;
-                }
-            }
-            
-            // Update or add edited indicator
-            let editedIndicator = msg.querySelector('.message-edited');
-            if (isEdited && !isDeleted) {
-                if (!editedIndicator) {
-                    editedIndicator = document.createElement('div');
-                    editedIndicator.className = 'message-edited';
-                    editedIndicator.textContent = '(edited)';
-                    const reactionsDiv = msg.querySelector('.reactions');
-                    if (reactionsDiv) {
-                        msg.insertBefore(editedIndicator, reactionsDiv);
-                    } else {
-                        msg.appendChild(editedIndicator);
-                    }
-                }
-            } else if (editedIndicator && isDeleted) {
-                editedIndicator.remove();
-            }
+            rDiv.style.display = "flex";
+        } else {
+            rDiv.style.display = "none";
         }
     }
+}
+
+// ==================== CONTEXT MENU FUNCTIONS ====================
+function showContextMenu(x, y) {
+    const contextMenu = document.getElementById("context-menu");
+    closeEmojiPicker();
     
-    function removeMessage(msgId) {
-        const msg = document.querySelector(`[data-msg-id="${msgId}"]`);
-        if (msg) {
-            msg.style.animation = 'slideOut 0.3s ease';
-            setTimeout(() => {
-                msg.remove();
-                messageCache.delete(msgId);
-            }, 300);
-        }
+    contextMenu.style.display = "block";
+    const rect = contextMenu.getBoundingClientRect();
+    
+    let left = x;
+    let top = y;
+    
+    if (left + rect.width > window.innerWidth) {
+        left = window.innerWidth - rect.width - 10;
+    }
+    if (top + rect.height > window.innerHeight) {
+        top = window.innerHeight - rect.height - 10;
+    }
+    if (left < 10) left = 10;
+    if (top < 10) top = 10;
+    
+    contextMenu.style.left = left + "px";
+    contextMenu.style.top = top + "px";
+}
+
+function closeContextMenu() {
+    const contextMenu = document.getElementById("context-menu");
+    contextMenu.style.display = "none";
+}
+
+function closeEmojiPicker() {
+    const picker = document.getElementById("emoji-picker");
+    picker.style.display = "none";
+}
+
+// ==================== REACTION FUNCTIONS ====================
+function sendReaction(emoji) {
+    if (!selectedMsgId) {
+        showToast("❌ No message selected");
+        return;
     }
     
-    function updateReactions(msgId, reactions) {
-        const msg = document.querySelector(`[data-msg-id="${msgId}"]`);
-        if (msg) {
-            let rDiv = msg.querySelector(".reactions");
-            
-            if (!rDiv) {
-                rDiv = document.createElement("div");
-                rDiv.className = "reactions";
-                msg.appendChild(rDiv);
-            }
-            
-            if (reactions && Object.keys(reactions).length > 0) {
-                rDiv.innerHTML = Object.entries(reactions)
-                    .map(([emoji, count]) => `<span>${emoji} ${count}</span>`)
-                    .join(" ");
-                rDiv.style.display = "flex";
-            } else {
-                rDiv.style.display = "none";
-            }
-        }
+    console.log("😀 Sending reaction:", selectedMsgId, emoji);
+    
+    chatSocket.send(JSON.stringify({
+        type: "reaction",
+        msg_id: selectedMsgId,
+        emoji: emoji,
+    }));
+    
+    closeEmojiPicker();
+    showToast(`✅ Reacted with ${emoji}`);
+}
+
+// ==================== CONTEXT MENU ACTIONS ====================
+function copyMessage() {
+    if (!selectedMessageContent || selectedMessageContent === "") {
+        showToast("❌ No message content to copy");
+        closeContextMenu();
+        return;
     }
     
-    // View media function
-    async function viewMedia(media_id, is_image, media_type, event) {
-        event.stopPropagation();
-        
-        // For normal media, show directly
-        if (media_type === "normal") {
-            const csrftoken = getCookie("csrftoken") || document.querySelector('[name=csrfmiddlewaretoken]')?.value;
-            
-            const headers = {};
-            if (csrftoken) {
-                headers["X-CSRFToken"] = csrftoken;
-            }
-            
-            try {
-                const response = await fetch(`/media/permanent/${media_id}/`, {
-                    method: "GET",
-                    headers: headers,
-                    credentials: "same-origin"
-                });
-                
-                const data = await response.json();
-                
-                if (data.status === "ok") {
-                    openMediaModal(data.url, data.is_image, data.filename);
-                    return;
-                }
-            } catch (error) {
-                console.error("Error getting permanent media:", error);
-                // Fall back to regular view if permanent endpoint fails
-            }
-        }
-        
-        // For view-once media, check first
+    if (selectedMessageContent === "[This message was deleted]") {
+        showToast("❌ Cannot copy deleted message");
+        closeContextMenu();
+        return;
+    }
+    
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(selectedMessageContent).then(() => {
+            showToast("✅ Message copied to clipboard!");
+            closeContextMenu();
+        }).catch(() => {
+            fallbackCopy(selectedMessageContent);
+        });
+    } else {
+        fallbackCopy(selectedMessageContent);
+    }
+}
+
+async function toggleE2EE() {
+    if (!e2eeReady && !e2eeEnabled) {
+        // Initialize E2EE if not already done
         try {
-            const csrftoken = getCookie("csrftoken") || document.querySelector('[name=csrfmiddlewaretoken]')?.value;
-            
-            const headers = {};
-            if (csrftoken) {
-                headers["X-CSRFToken"] = csrftoken;
+            await initializeE2EE();
+            if (e2eeReady) {
+                showToast('✅ Encryption enabled');
+                updateE2EEButton();
             }
-            
-            const response = await fetch(`/media/check/${media_id}/`, {
-                method: "POST",
+        } catch (error) {
+            console.error('Failed to enable encryption:', error);
+            showToast('❌ Failed to enable encryption');
+        }
+    } else {
+        // Toggle E2EE state
+        e2eeEnabled = !e2eeEnabled;
+        showToast(e2eeEnabled ? '✅ Encryption enabled' : '⚠️ Encryption disabled');
+        updateE2EEButton();
+    }
+}
+
+function updateE2EEButton() {
+    const btn = document.getElementById('e2ee-toggle-btn');
+    const text = document.getElementById('e2ee-status-text');
+    
+    if (btn && text) {
+        if (e2eeEnabled && e2eeReady) {
+            btn.style.background = 'rgba(76, 175, 80, 0.3)';
+            text.textContent = 'Encryption: On';
+        } else {
+            btn.style.background = 'rgba(255, 152, 0, 0.3)';
+            text.textContent = 'Encryption: Off';
+        }
+    }
+}
+
+function fallbackCopy(text) {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.position = "fixed";
+    textArea.style.left = "-999999px";
+    document.body.appendChild(textArea);
+    textArea.select();
+    
+    try {
+        document.execCommand("copy");
+        showToast("✅ Message copied to clipboard!");
+    } catch (err) {
+        showToast("❌ Failed to copy message");
+    }
+    
+    document.body.removeChild(textArea);
+}
+
+function editMessage() {
+    if (!selectedMsgId || !selectedMessageElement) {
+        showToast("❌ Please select a message to edit");
+        closeContextMenu();
+        return;
+    }
+    
+    const msgUser = selectedMessageElement.dataset.username;
+    const isDeleted = selectedMessageElement.dataset.isDeleted === "true";
+    const isMedia = selectedMessageElement.dataset.isMedia === "true";
+    
+    if (msgUser !== username) {
+        showToast("❌ You can only edit your own messages");
+        closeContextMenu();
+        return;
+    }
+    
+    if (isDeleted) {
+        showToast("❌ Cannot edit deleted messages");
+        closeContextMenu();
+        return;
+    }
+    
+    if (isMedia) {
+        showToast("❌ Cannot edit media messages");
+        closeContextMenu();
+        return;
+    }
+    
+    const currentText = selectedMessageElement.dataset.messageText || "";
+    
+    if (!currentText) {
+        showToast("❌ Cannot find message content");
+        closeContextMenu();
+        return;
+    }
+    
+    editingMessageId = selectedMsgId;
+    document.getElementById('edit-message-input').value = currentText;
+    document.getElementById('edit-modal').style.display = 'flex';
+    closeContextMenu();
+    
+    setTimeout(() => {
+        document.getElementById('edit-message-input').focus();
+    }, 100);
+}
+
+function replyToMessage() {
+    if (!selectedMessageContent || selectedMessageContent === "") {
+        showToast("❌ No message to reply to");
+        closeContextMenu();
+        return;
+    }
+    
+    const input = document.getElementById("message-input");
+    const sender = selectedMessageElement?.dataset.username || "User";
+    
+    input.value = `Replying to ${sender}: ${selectedMessageContent}\n`;
+    input.focus();
+    autoResizeTextarea();
+    closeContextMenu();
+}
+
+function saveEditedMessage() {
+    const newMessage = document.getElementById('edit-message-input').value.trim();
+    
+    if (!newMessage) {
+        showToast("❌ Message cannot be empty");
+        return;
+    }
+    
+    if (!editingMessageId) {
+        showToast("❌ No message selected");
+        closeEditModal();
+        return;
+    }
+    
+    console.log("✏️ Editing message:", editingMessageId, "New text:", newMessage);
+    
+    chatSocket.send(JSON.stringify({
+        type: "edit_message",
+        msg_id: editingMessageId,
+        message: newMessage,
+        username: username
+    }));
+    
+    closeEditModal();
+    showToast("✅ Message edited");
+}
+
+function closeEditModal() {
+    document.getElementById('edit-modal').style.display = 'none';
+    editingMessageId = null;
+}
+
+function deleteMessage() {
+    if (!selectedMsgId || !selectedMessageElement) {
+        showToast("❌ Please select a message to delete");
+        closeContextMenu();
+        return;
+    }
+    
+    const msgUser = selectedMessageElement.dataset.username;
+    const isDeleted = selectedMessageElement.dataset.isDeleted === "true";
+    
+    if (msgUser !== username) {
+        showToast("❌ You can only delete your own messages");
+        closeContextMenu();
+        return;
+    }
+    
+    if (isDeleted) {
+        showToast("❌ Message is already deleted");
+        closeContextMenu();
+        return;
+    }
+    
+    if (confirm("Delete this message? It will be replaced with '[This message was deleted]'")) {
+        console.log("🗑️ Deleting message:", selectedMsgId);
+        
+        chatSocket.send(JSON.stringify({
+            type: "delete_message",
+            msg_id: selectedMsgId,
+            username: username
+        }));
+        
+        closeContextMenu();
+        showToast("✅ Message deleted");
+    } else {
+        closeContextMenu();
+    }
+}
+
+function unsendMessage() {
+    if (!selectedMsgId || !selectedMessageElement) {
+        showToast("❌ Please select a message to unsend");
+        closeContextMenu();
+        return;
+    }
+    
+    const msgUser = selectedMessageElement.dataset.username;
+    
+    if (msgUser !== username) {
+        showToast("❌ You can only unsend your own messages");
+        closeContextMenu();
+        return;
+    }
+    
+    if (confirm("Unsend this message? It will be completely removed for everyone.")) {
+        console.log("↩️ Unsending message:", selectedMsgId);
+        
+        chatSocket.send(JSON.stringify({
+            type: "unsend_message",
+            msg_id: selectedMsgId,
+            username: username
+        }));
+        
+        closeContextMenu();
+        showToast("✅ Message unsent");
+    } else {
+        closeContextMenu();
+    }
+}
+
+// ==================== MEDIA VIEW FUNCTIONS ====================
+async function viewMedia(media_id, is_image, media_type, event) {
+    event.stopPropagation();
+    
+    if (media_type === "normal") {
+        const csrftoken = getCookie("csrftoken") || document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+        
+        const headers = {};
+        if (csrftoken) {
+            headers["X-CSRFToken"] = csrftoken;
+        }
+        
+        try {
+            const response = await fetch(`/media/permanent/${media_id}/`, {
+                method: "GET",
                 headers: headers,
                 credentials: "same-origin"
             });
@@ -1527,439 +1964,255 @@
             const data = await response.json();
             
             if (data.status === "ok") {
-                openMediaModal(data.view_url, data.is_image, data.filename);
-            } else {
-                alert("Error: " + data.message);
+                openMediaModal(data.url, data.is_image, data.filename);
+                return;
             }
         } catch (error) {
-            console.error("Error checking media:", error);
-            alert("Failed to load media");
+            console.error("Error getting permanent media:", error);
         }
     }
     
-    // Context Menu Functions
-    function showContextMenu(x, y) {
-        const contextMenu = document.getElementById("context-menu");
-        closeEmojiPicker();
+    try {
+        const csrftoken = getCookie("csrftoken") || document.querySelector('[name=csrfmiddlewaretoken]')?.value;
         
-        contextMenu.style.display = "block";
-        const rect = contextMenu.getBoundingClientRect();
-        
-        let left = x;
-        let top = y;
-        
-        if (left + rect.width > window.innerWidth) {
-            left = window.innerWidth - rect.width - 10;
-        }
-        if (top + rect.height > window.innerHeight) {
-            top = window.innerHeight - rect.height - 10;
-        }
-        if (left < 10) left = 10;
-        if (top < 10) top = 10;
-        
-        contextMenu.style.left = left + "px";
-        contextMenu.style.top = top + "px";
-    }
-    
-    function closeContextMenu() {
-        const contextMenu = document.getElementById("context-menu");
-        contextMenu.style.display = "none";
-    }
-    
-    function closeEmojiPicker() {
-        const picker = document.getElementById("emoji-picker");
-        picker.style.display = "none";
-    }
-    
-    function sendReaction(emoji) {
-        if (!selectedMsgId) {
-            showToast("❌ No message selected");
-            return;
+        const headers = {};
+        if (csrftoken) {
+            headers["X-CSRFToken"] = csrftoken;
         }
         
-        console.log("😀 Sending reaction:", selectedMsgId, emoji);
+        const response = await fetch(`/media/check/${media_id}/`, {
+            method: "POST",
+            headers: headers,
+            credentials: "same-origin"
+        });
         
-        chatSocket.send(JSON.stringify({
-            type: "reaction",
-            msg_id: selectedMsgId,
-            emoji: emoji,
-        }));
+        const data = await response.json();
         
-        closeEmojiPicker();
-        showToast(`✅ Reacted with ${emoji}`);
-    }
-    
-    // Context Menu Actions
-    function copyMessage() {
-        if (!selectedMessageContent || selectedMessageContent === "") {
-            showToast("❌ No message content to copy");
-            closeContextMenu();
-            return;
-        }
-        
-        if (selectedMessageContent === "[This message was deleted]") {
-            showToast("❌ Cannot copy deleted message");
-            closeContextMenu();
-            return;
-        }
-        
-        if (navigator.clipboard && window.isSecureContext) {
-            navigator.clipboard.writeText(selectedMessageContent).then(() => {
-                showToast("✅ Message copied to clipboard!");
-                closeContextMenu();
-            }).catch(() => {
-                fallbackCopy(selectedMessageContent);
-            });
+        if (data.status === "ok") {
+            openMediaModal(data.view_url, data.is_image, data.filename);
         } else {
-            fallbackCopy(selectedMessageContent);
+            alert("Error: " + data.message);
         }
+    } catch (error) {
+        console.error("Error checking media:", error);
+        alert("Failed to load media");
     }
+}
+
+function openMediaModal(url, is_image, filename) {
+    const modal = document.getElementById("media-modal");
+    const modalImg = document.getElementById("modal-media");
+    const modalVideo = document.getElementById("modal-video");
+    const modalInfo = document.getElementById("modal-info");
+    const modalError = document.getElementById("modal-error");
     
-    function fallbackCopy(text) {
-        const textArea = document.createElement("textarea");
-        textArea.value = text;
-        textArea.style.position = "fixed";
-        textArea.style.left = "-999999px";
-        document.body.appendChild(textArea);
-        textArea.select();
-        
-        try {
-            document.execCommand("copy");
-            showToast("✅ Message copied to clipboard!");
-        } catch (err) {
-            showToast("❌ Failed to copy message");
-        }
-        
-        document.body.removeChild(textArea);
+    modal.style.display = "flex";
+    modalImg.style.display = "none";
+    modalVideo.style.display = "none";
+    modalError.style.display = "none";
+    
+    if (is_image) {
+        modalImg.src = url;
+        modalImg.style.display = "block";
+        modalInfo.textContent = filename;
+    } else {
+        modalVideo.src = url;
+        modalVideo.style.display = "block";
+        modalInfo.textContent = filename;
     }
+}
+
+function closeMediaModal() {
+    const modal = document.getElementById("media-modal");
+    modal.style.display = "none";
     
-    function editMessage() {
-        if (!selectedMsgId || !selectedMessageElement) {
-            showToast("❌ Please select a message to edit");
-            closeContextMenu();
-            return;
-        }
-        
-        const msgUser = selectedMessageElement.dataset.username;
-        const isDeleted = selectedMessageElement.dataset.isDeleted === "true";
-        const isMedia = selectedMessageElement.dataset.isMedia === "true";
-        
-        if (msgUser !== username) {
-            showToast("❌ You can only edit your own messages");
-            closeContextMenu();
-            return;
-        }
-        
-        if (isDeleted) {
-            showToast("❌ Cannot edit deleted messages");
-            closeContextMenu();
-            return;
-        }
-        
-        if (isMedia) {
-            showToast("❌ Cannot edit media messages");
-            closeContextMenu();
-            return;
-        }
-        
-        const currentText = selectedMessageElement.dataset.messageText || "";
-        
-        if (!currentText) {
-            showToast("❌ Cannot find message content");
-            closeContextMenu();
-            return;
-        }
-        
-        editingMessageId = selectedMsgId;
-        document.getElementById('edit-message-input').value = currentText;
-        document.getElementById('edit-modal').style.display = 'flex';
-        closeContextMenu();
-        
-        setTimeout(() => {
-            document.getElementById('edit-message-input').focus();
-        }, 100);
-    }
+    const modalImg = document.getElementById("modal-media");
+    const modalVideo = document.getElementById("modal-video");
     
-    function saveEditedMessage() {
-        const newMessage = document.getElementById('edit-message-input').value.trim();
-        
-        if (!newMessage) {
-            showToast("❌ Message cannot be empty");
-            return;
-        }
-        
-        if (!editingMessageId) {
-            showToast("❌ No message selected");
-            closeEditModal();
-            return;
-        }
-        
-        console.log("✏️ Editing message:", editingMessageId, "New text:", newMessage);
-        
-        chatSocket.send(JSON.stringify({
-            type: "edit_message",
-            msg_id: editingMessageId,
-            message: newMessage,
-            username: username
-        }));
-        
-        closeEditModal();
-        showToast("✅ Message edited");
-    }
+    modalImg.src = "";
+    modalVideo.src = "";
+}
+
+// ==================== HELPER FUNCTIONS ====================
+function showToast(message) {
+    const existingToast = document.getElementById("custom-toast");
+    if (existingToast) existingToast.remove();
     
-    function closeEditModal() {
-        document.getElementById('edit-modal').style.display = 'none';
-        editingMessageId = null;
-    }
+    const toast = document.createElement("div");
+    toast.id = "custom-toast";
+    toast.textContent = message;
+    toast.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: #4caf50;
+        color: white;
+        padding: 15px 25px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        z-index: 10000;
+        font-weight: bold;
+        animation: slideIn 0.3s ease;
+    `;
     
-    function deleteMessage() {
-        if (!selectedMsgId || !selectedMessageElement) {
-            showToast("❌ Please select a message to delete");
-            closeContextMenu();
-            return;
-        }
-        
-        const msgUser = selectedMessageElement.dataset.username;
-        const isDeleted = selectedMessageElement.dataset.isDeleted === "true";
-        
-        if (msgUser !== username) {
-            showToast("❌ You can only delete your own messages");
-            closeContextMenu();
-            return;
-        }
-        
-        if (isDeleted) {
-            showToast("❌ Message is already deleted");
-            closeContextMenu();
-            return;
-        }
-        
-        if (confirm("Delete this message? It will be replaced with '[This message was deleted]'")) {
-            console.log("🗑️ Deleting message:", selectedMsgId);
-            
-            chatSocket.send(JSON.stringify({
-                type: "delete_message",
-                msg_id: selectedMsgId,
-                username: username
-            }));
-            
-            closeContextMenu();
-            showToast("✅ Message deleted");
-        } else {
-            closeContextMenu();
-        }
-    }
-    
-    function unsendMessage() {
-        if (!selectedMsgId || !selectedMessageElement) {
-            showToast("❌ Please select a message to unsend");
-            closeContextMenu();
-            return;
-        }
-        
-        const msgUser = selectedMessageElement.dataset.username;
-        
-        if (msgUser !== username) {
-            showToast("❌ You can only unsend your own messages");
-            closeContextMenu();
-            return;
-        }
-        
-        if (confirm("Unsend this message? It will be completely removed for everyone.")) {
-            console.log("↩️ Unsending message:", selectedMsgId);
-            
-            chatSocket.send(JSON.stringify({
-                type: "unsend_message",
-                msg_id: selectedMsgId,
-                username: username
-            }));
-            
-            closeContextMenu();
-            showToast("✅ Message unsent");
-        } else {
-            closeContextMenu();
-        }
-    }
-    
-    function showToast(message) {
-        const existingToast = document.getElementById("custom-toast");
-        if (existingToast) existingToast.remove();
-        
-        const toast = document.createElement("div");
-        toast.id = "custom-toast";
-        toast.textContent = message;
-        toast.style.cssText = `
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: #4caf50;
-            color: white;
-            padding: 15px 25px;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-            z-index: 10000;
-            font-weight: bold;
-            animation: slideIn 0.3s ease;
-        `;
-        
-        document.body.appendChild(toast);
-        setTimeout(() => {
-            toast.style.animation = "slideOut 0.3s ease";
-            setTimeout(() => toast.remove(), 300);
-        }, 3000);
-    }
-    
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== "") {
-            const cookies = document.cookie.split(";");
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === name + "=") {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
+    document.body.appendChild(toast);
+    setTimeout(() => {
+        toast.style.animation = "slideOut 0.3s ease";
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== "") {
+        const cookies = document.cookie.split(";");
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + "=")) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
             }
         }
-        return cookieValue;
     }
-    
-    function scrollToBottom() {
-        const chatDiv = document.getElementById("chat-messages");
+    return cookieValue;
+}
+
+function scrollToBottom() {
+    const chatDiv = document.getElementById("chat-messages");
+    if (chatDiv) {
         chatDiv.scrollTop = chatDiv.scrollHeight;
     }
-    
-    function autoResizeTextarea() {
-        const textarea = document.getElementById("message-input");
-        textarea.style.height = "24px";
-        textarea.style.height = Math.min(textarea.scrollHeight, 100) + "px";
+}
+
+function autoResizeTextarea() {
+    const textarea = document.getElementById("message-input");
+    textarea.style.height = "24px";
+    textarea.style.height = Math.min(textarea.scrollHeight, 100) + "px";
+}
+
+// ==================== ROOM FUNCTIONS ====================
+function copyRoomCode() {
+    const code = "{{ short_code }}";
+    if (code) {
+        navigator.clipboard.writeText(code).then(() => {
+            showToast("Room code copied!");
+        }).catch(() => {
+            const textArea = document.createElement("textarea");
+            textArea.value = code;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand("copy");
+            document.body.removeChild(textArea);
+            showToast("Room code copied!");
+        });
     }
+}
+
+function goBackHome() {
+    window.location.href = "/";
+}
+
+function closeRoom() {
+    if (confirm("Are you sure you want to close this room? All messages and media will be deleted.")) {
+        chatSocket.send(JSON.stringify({
+            type: "close_room"
+        }));
+    }
+}
+
+function startRedirectCountdown(message) {
+    const overlay = document.getElementById("redirect-overlay");
+    const messageDiv = document.getElementById("redirect-message");
+    const countdownDiv = document.getElementById("redirect-countdown");
     
-    function openMediaModal(url, is_image, filename) {
-        const modal = document.getElementById("media-modal");
-        const modalImg = document.getElementById("modal-media");
-        const modalVideo = document.getElementById("modal-video");
-        const modalInfo = document.getElementById("modal-info");
-        const modalError = document.getElementById("modal-error");
+    messageDiv.textContent = message || "Room has been closed. Redirecting...";
+    overlay.style.display = "flex";
+    
+    let countdown = 5;
+    redirectTimer = setInterval(() => {
+        countdownDiv.textContent = countdown;
+        countdown--;
         
-        modal.style.display = "flex";
-        modalImg.style.display = "none";
-        modalVideo.style.display = "none";
-        modalError.style.display = "none";
-        
-        if (is_image) {
-            modalImg.src = url;
-            modalImg.style.display = "block";
-            modalInfo.textContent = filename;
-        } else {
-            modalVideo.src = url;
-            modalVideo.style.display = "block";
-            modalInfo.textContent = filename;
+        if (countdown < 0) {
+            clearInterval(redirectTimer);
+            window.location.href = "/";
         }
+    }, 1000);
+}
+
+// ==================== EVENT LISTENERS ====================
+document.getElementById("message-input").addEventListener("input", autoResizeTextarea);
+
+document.getElementById("message-input").addEventListener("keypress", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        handleSend();
+    }
+});
+
+document.addEventListener("keydown", function(e) {
+    if (e.key === "Escape") {
+        closeMediaModal();
+        closeEmojiPicker();
+        closeContextMenu();
+        closeEditModal();
+    }
+});
+
+document.addEventListener("click", function(e) {
+    const emojiPicker = document.getElementById("emoji-picker");
+    const contextMenu = document.getElementById("context-menu");
+    
+    if (emojiPicker.style.display === "block" && 
+        !emojiPicker.contains(e.target) && 
+        !e.target.closest('.message')) {
+        closeEmojiPicker();
     }
     
-    function closeMediaModal() {
-        const modal = document.getElementById("media-modal");
-        modal.style.display = "none";
-        
-        const modalImg = document.getElementById("modal-media");
-        const modalVideo = document.getElementById("modal-video");
-        
-        modalImg.src = "";
-        modalVideo.src = "";
+    if (contextMenu.style.display === "block" && 
+        !contextMenu.contains(e.target) && 
+        !e.target.closest('.message')) {
+        closeContextMenu();
     }
+});
+
+// ==================== INITIALIZATION ====================
+// In chat.html - Replace the window.addEventListener section with this:
+// In chat.html - Replace the entire window.addEventListener section with this:
+window.addEventListener('load', async function() {
+    autoResizeTextarea();
+    scrollToBottom();
+    setMediaType("normal");
     
-    function copyRoomCode() {
-        const code = "{{ short_code }}";
-        if (code) {
-            navigator.clipboard.writeText(code).then(() => {
-                showToast("Room code copied!");
-            }).catch(() => {
-                const textArea = document.createElement("textarea");
-                textArea.value = code;
-                document.body.appendChild(textArea);
-                textArea.select();
-                document.execCommand("copy");
-                document.body.removeChild(textArea);
-                showToast("Room code copied!");
-            });
-        }
-    }
-    
-    function goBackHome() {
-        window.location.href = "/";
-    }
-    
-    function closeRoom() {
-        if (confirm("Are you sure you want to close this room? All messages and media will be deleted.")) {
-            chatSocket.send(JSON.stringify({
-                type: "close_room"
-            }));
-        }
-    }
-    
-    function startRedirectCountdown(message) {
-        const overlay = document.getElementById("redirect-overlay");
-        const messageDiv = document.getElementById("redirect-message");
-        const countdownDiv = document.getElementById("redirect-countdown");
-        
-        messageDiv.textContent = message || "Room has been closed. Redirecting...";
-        overlay.style.display = "flex";
-        
-        let countdown = 5;
-        redirectTimer = setInterval(() => {
-            countdownDiv.textContent = countdown;
-            countdown--;
+    // FORCE E2EE TO BE ON BY DEFAULT FOR ALL AUTHENTICATED USERS
+    if (username && username !== "Anonymous") {
+        try {
+            console.log('🔄 Auto-initializing E2EE for authenticated user...');
+            e2eeEnabled = true; // Force enabled
+            await initializeE2EE();
             
-            if (countdown < 0) {
-                clearInterval(redirectTimer);
-                window.location.href = "/";
+            // Double-check E2EE is ready
+            if (e2eeReady) {
+                console.log('✅ E2EE automatically enabled and ready');
+                showToast('🔒 End-to-end encryption is enabled');
+            } else {
+                console.warn('⚠️ E2EE initialized but not ready');
+                showToast('⚠️ Encryption initializing...');
             }
-        }, 1000);
+        } catch (error) {
+            console.error('❌ E2EE auto-initialization failed:', error);
+            e2eeEnabled = false;
+            showE2EEIndicator(false);
+            showToast('❌ Encryption failed to initialize');
+        }
+    } else {
+        e2eeEnabled = false;
+        showE2EEIndicator(false);
+        console.log('👤 Anonymous user - E2EE disabled');
     }
     
-    // Event Listeners
-    document.getElementById("message-input").addEventListener("input", autoResizeTextarea);
-    
-    document.getElementById("message-input").addEventListener("keypress", (e) => {
-        if (e.key === "Enter" && !e.shiftKey) {
-            e.preventDefault();
-            handleSend();
-        }
-    });
-    
-    document.addEventListener("keydown", function(e) {
-        if (e.key === "Escape") {
-            closeMediaModal();
-            closeEmojiPicker();
-            closeContextMenu();
-            closeEditModal();
-        }
-    });
-    
-    // Close menus when clicking outside
-    document.addEventListener("click", function(e) {
-        const emojiPicker = document.getElementById("emoji-picker");
-        const contextMenu = document.getElementById("context-menu");
-        
-        if (emojiPicker.style.display === "block" && 
-            !emojiPicker.contains(e.target) && 
-            !e.target.closest('.message')) {
-            closeEmojiPicker();
-        }
-        
-        if (contextMenu.style.display === "block" && 
-            !contextMenu.contains(e.target) && 
-            !e.target.closest('.message')) {
-            closeContextMenu();
-        }
-    });
-    
-    // Initialize
-    window.onload = function() {
-        autoResizeTextarea();
-        scrollToBottom();
-        setMediaType("normal"); // Set default to normal
-    };
+    // Update E2EE button state
+    updateE2EEButton();
+});
 </script>
 {% endblock %}

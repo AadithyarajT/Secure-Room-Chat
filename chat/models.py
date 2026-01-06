@@ -25,6 +25,7 @@ class Room(models.Model):
     room_type = models.CharField(max_length=20, choices=ROOM_TYPES, default="private")
     is_private = models.BooleanField(default=False)
     password = models.CharField(max_length=50, blank=True, null=True)
+    is_encrypted = models.BooleanField(default=False)
     created_by = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
@@ -249,6 +250,7 @@ class TemporaryMedia(models.Model):
         return self.user_views.count()
 
 
+# In models.py - Update ChatMessage model
 class ChatMessage(models.Model):
     """Store message edits and deletions"""
 
@@ -263,7 +265,10 @@ class ChatMessage(models.Model):
     is_deleted = models.BooleanField(default=False)
     is_edited = models.BooleanField(default=False)
 
-    # Add these missing fields
+    # Add this field for encryption
+    is_encrypted = models.BooleanField(default=False)  # NEW FIELD
+
+    # Existing fields
     is_media = models.BooleanField(default=False)
     media_id = models.UUIDField(null=True, blank=True)
     filename = models.CharField(max_length=255, null=True, blank=True)
@@ -286,6 +291,7 @@ class ChatMessage(models.Model):
             models.Index(fields=["room_id", "username"]),
             models.Index(fields=["is_media"]),
             models.Index(fields=["media_id"]),
+            models.Index(fields=["is_encrypted"]),  # Add index for the new field
         ]
 
     def __str__(self):
@@ -469,3 +475,48 @@ class UserRoomJoin(models.Model):
 def create_user_profile(sender, instance, created, **kwargs):
     if created:
         Profile.objects.create(user=instance)
+
+
+class RoomEncryptionKey(models.Model):
+    """Store encryption keys for rooms"""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    room = models.OneToOneField(
+        Room, on_delete=models.CASCADE, related_name="encryption_key"
+    )
+    encrypted_key = models.TextField()  # Encrypted with each user's public key
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Encryption key for {self.room.name}"
+
+
+class UserEncryptionKey(models.Model):
+    """Store user's public keys for encryption"""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.OneToOneField(
+        User, on_delete=models.CASCADE, related_name="encryption_key"
+    )
+    public_key = models.TextField()  # JWK format
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Encryption key for {self.user.username}"
+
+
+class RoomUserKey(models.Model):
+    """Store room keys encrypted for each user"""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name="user_keys")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="room_keys")
+    encrypted_room_key = models.TextField()  # Room key encrypted with user's public key
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ["room", "user"]
+
+    def __str__(self):
+        return f"{self.user.username} key for {self.room.name}"

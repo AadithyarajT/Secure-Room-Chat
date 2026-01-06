@@ -20,8 +20,8 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "corsheaders",  # Add this for CORS support
-    "channels",  # Add this for WebSockets
-    "chat",  # Our app
+    "channels",
+    "chat",
 ]
 
 MIDDLEWARE = [
@@ -79,7 +79,6 @@ CHANNEL_LAYERS = {
     },
 }
 CHANNEL_LAYERS = {"default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}}
-
 
 
 # Static files
