@@ -22,6 +22,9 @@ from django.db.models import Q
 from django.utils import timezone
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth import update_session_auth_hash
+from .forms import RegisterForm  # This is already there
+
+# But you might need other forms
 
 # Local imports
 from .models import (
@@ -40,7 +43,9 @@ from .models import (
 )
 from .forms import RegisterForm
 from .utils import generate_random_password
-
+from .models import UserEncryptionKey, RoomUserKey
+import json
+from django.http import JsonResponse
 
 def index(request):
     """Simple homepage with navigation"""
@@ -2220,3 +2225,133 @@ def view_once_media(request, media_id):
     except Exception as e:
         print(f"Error in view_once_media: {e}")
         return HttpResponse("Error loading media.", status=500)
+
+
+@login_required
+@require_POST
+@csrf_exempt
+def upload_public_key(request):
+    """Store user's public key for E2EE"""
+    try:
+        data = json.loads(request.body)
+        public_key_jwk = data.get("public_key")
+
+        if not public_key_jwk:
+            return JsonResponse({"success": False, "error": "Public key required"})
+
+        # Parse the JSON string
+        try:
+            key_data = json.loads(public_key_jwk)
+        except json.JSONDecodeError:
+            return JsonResponse({"success": False, "error": "Invalid JSON format"})
+
+        # Create or update user's encryption key
+        user_key, created = UserEncryptionKey.objects.update_or_create(
+            user=request.user, defaults={"public_key": json.dumps(key_data)}
+        )
+
+        return JsonResponse(
+            {
+                "success": True,
+                "message": "Public key uploaded successfully",
+                "created": created,
+            }
+        )
+
+    except json.JSONDecodeError:
+        return JsonResponse({"success": False, "error": "Invalid JSON data"})
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)})
+
+
+@login_required
+@csrf_exempt
+def get_room_key(request, room_id):
+    """Get encrypted room key for the current user"""
+    try:
+        # Try to find room by UUID first, then by short code
+        try:
+            room_uuid = uuid.UUID(room_id)
+            room = Room.objects.get(id=room_uuid)
+        except (ValueError, Room.DoesNotExist):
+            # Try as short code
+            room = Room.objects.get(short_code=room_id.upper())
+
+        # Check if user has access to this room
+        if not room.can_user_access(request.user)[0]:
+            return JsonResponse(
+                {"success": False, "error": "Access denied"}, status=403
+            )
+
+        # Get user's encrypted room key
+        room_user_key = RoomUserKey.objects.filter(room=room, user=request.user).first()
+
+        if room_user_key:
+            return JsonResponse(
+                {
+                    "success": True,
+                    "encrypted_key": room_user_key.encrypted_room_key,
+                    "room_id": str(room.id),
+                }
+            )
+        else:
+            return JsonResponse(
+                {
+                    "success": False,
+                    "error": "No room key found for this user",
+                    "should_create": True,
+                }
+            )
+
+    except Room.DoesNotExist:
+        return JsonResponse({"success": False, "error": "Room not found"}, status=404)
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)})
+
+
+@login_required
+@require_POST
+@csrf_exempt
+def upload_room_key(request, room_id):
+    """Upload encrypted room key for the current user"""
+    try:
+        data = json.loads(request.body)
+        encrypted_key = data.get("encrypted_key")
+
+        if not encrypted_key:
+            return JsonResponse({"success": False, "error": "Encrypted key required"})
+
+        # Try to find room by UUID first, then by short code
+        try:
+            room_uuid = uuid.UUID(room_id)
+            room = Room.objects.get(id=room_uuid)
+        except (ValueError, Room.DoesNotExist):
+            # Try as short code
+            room = Room.objects.get(short_code=room_id.upper())
+
+        # Check if user has access to this room
+        if not room.can_user_access(request.user)[0]:
+            return JsonResponse(
+                {"success": False, "error": "Access denied"}, status=403
+            )
+
+        # Create or update user's room key
+        room_user_key, created = RoomUserKey.objects.update_or_create(
+            room=room, user=request.user, defaults={"encrypted_room_key": encrypted_key}
+        )
+
+        return JsonResponse(
+            {
+                "success": True,
+                "message": "Room key uploaded successfully",
+                "created": created,
+                "room_id": str(room.id),
+            }
+        )
+
+    except Room.DoesNotExist:
+        return JsonResponse({"success": False, "error": "Room not found"}, status=404)
+    except json.JSONDecodeError:
+        return JsonResponse({"success": False, "error": "Invalid JSON data"})
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)})

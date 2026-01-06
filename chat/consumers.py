@@ -8,6 +8,7 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from django.utils import timezone
 from django.core.exceptions import ObjectDoesNotExist
+import uuid as uuid_lib  # This is needed but not imported properly
 from .models import (
     Room,
     ChatMessage,
@@ -114,6 +115,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
         media_id=None,
         filename=None,
         is_image=False,
+        is_encrypted=False,  # NEW parameter
+        media_type="once"
     ):
         return ChatMessage.objects.create(
             message_id=msg_id,
@@ -125,6 +128,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
             media_id=media_id,
             filename=filename,
             is_image=is_image,
+            is_encrypted=is_encrypted,  # NEW field
+            media_type=media_type
         )
 
     @database_sync_to_async
@@ -137,30 +142,37 @@ class ChatConsumer(AsyncWebsocketConsumer):
         except ChatMessage.DoesNotExist:
             pass
 
+    # In chat/consumers.py - Fix the get_db_messages method
+
     @database_sync_to_async
     def get_db_messages(self, limit=500):
         """Return newest `limit` messages ordered by created_at."""
-        messages = list(
-            ChatMessage.objects.filter(room_id=self.room_id)
-            .order_by("-created_at")[:limit]
-            .values(
-                "message_id",
-                "username",
-                "original_message",
-                "edited_message",
-                "created_at",
-                "is_edited",
-                "is_deleted",
-                "is_media",
-                "media_id",
-                "filename",
-                "is_image",
-                "media_type",  # Add this field
+        try:
+            messages = list(
+                ChatMessage.objects.filter(room_id=self.room_id)
+                .order_by("-created_at")[:limit]
+                .values(
+                    "message_id",
+                    "username",
+                    "original_message",
+                    "edited_message",
+                    "created_at",
+                    "is_edited",
+                    "is_deleted",
+                    "is_media",
+                    "media_id",
+                    "filename",
+                    "is_image",
+                    "media_type",
+                    "is_encrypted",  # Make sure this field exists in your model
+                )
             )
-        )
-        return messages
+            return messages
+        except Exception as e:
+            print(f"Error fetching messages from DB: {e}")
+            return []  # Return empty list instead of None
 
-    # ------------------------------------------------------------------ #
+        # ------------------------------------------------------------------ #
     # Message handling
     # ------------------------------------------------------------------ #
     async def receive(self, text_data):
@@ -170,9 +182,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
         # ------------------ NEW MESSAGE ------------------
         if msg_type == "message":
             message = data.get("message", "")
-
-            # Always use the stored username from connect
             username = self.username
+            encrypted = data.get("encrypted", False)  # NEW: Check if message is encrypted
 
             # Check if message is not empty
             if not message or not message.strip():
@@ -185,6 +196,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             media_id = data.get("media_id", "")
             filename = data.get("filename", "")
             is_image = data.get("is_image", False)
+            media_type = data.get("media_type", "once")
 
             # Save to DB only for authenticated users
             if self.user and self.user.is_authenticated:
@@ -196,6 +208,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     media_id=media_id,
                     filename=filename,
                     is_image=is_image,
+                    is_encrypted=encrypted,  # NEW: Store encryption status
+                    media_type=media_type
                 )
 
             # Save to Redis (fast broadcast) for all users
@@ -211,6 +225,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 "is_image": is_image,
                 "is_edited": False,
                 "is_deleted": False,
+                "encrypted": encrypted,  # NEW: Include encryption status
+                "media_type": media_type
             }
             await self.save_message_redis(msg_payload)
 
@@ -226,6 +242,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     "media_id": media_id,
                     "filename": filename,
                     "is_image": is_image,
+                    "encrypted": encrypted,  # NEW: Include in broadcast
+                    "media_type": media_type
                 },
             )
 
@@ -234,6 +252,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             msg_id = data.get("msg_id")
             new_text = data.get("message")
             username = data.get("username", "Anonymous")
+            encrypted = data.get("encrypted", False)  # NEW
 
             # Only allow editing for authenticated users
             if self.user and self.user.is_authenticated:
@@ -258,6 +277,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                         "msg_id": msg_id,
                         "message": new_text,
                         "username": username,
+                        "encrypted": encrypted,  # NEW
                     },
                 )
 
@@ -592,8 +612,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
     # ------------------------------------------------------------------ #
     # History (DB first, then Redis)
     # ------------------------------------------------------------------ #
+    # In consumers.py - Update get_message_history method
+
+
     async def get_message_history(self, limit=500):
-    # 1. DB messages (persistent)
+        # 1. DB messages (persistent)
         db_msgs = await self.get_db_messages(limit)
 
         # Convert DB rows → same shape as Redis
@@ -615,11 +638,14 @@ class ChatConsumer(AsyncWebsocketConsumer):
             media_id = row["media_id"]
             if media_id:
                 media_id = str(media_id)
-            
+
             # Convert message_id to string if it's UUID
             message_id = row["message_id"]
-            if isinstance(message_id, uuid.UUID):
+            if isinstance(message_id, uuid_lib.UUID):
                 message_id = str(message_id)
+
+            # Get reactions from Redis (this is the critical fix)
+            reactions = await self.get_reactions_redis(message_id)
 
             history.append(
                 {
@@ -627,18 +653,19 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     "username": row["username"],
                     "message": message_text,
                     "timestamp": ts,
-                    "reactions": {},  # reactions live only in Redis
+                    "reactions": reactions,  # Make sure this has data
                     "is_media": row["is_media"],
                     "media_id": media_id or "",
                     "filename": row["filename"] or "",
                     "is_image": row["is_image"],
                     "is_edited": row["is_edited"],
                     "is_deleted": row["is_deleted"],
-                    "media_type": row.get("media_type", "once"),  # Add media_type
+                    "media_type": row.get("media_type", "once"),
+                    "encrypted": row.get("is_encrypted", False),
                 }
             )
 
-        # 2. Append any newer Redis-only messages (should be rare)
+        # 2. Append any newer Redis-only messages
         redis_key = f"messages_{self.room_id}"
         redis_raw = r.lrange(redis_key, 0, limit - len(history) - 1)
         redis_newer = []
@@ -646,6 +673,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
             try:
                 msg = json.loads(raw)
                 if msg["id"] not in {h["id"] for h in history}:
+                    # Ensure reactions are included
+                    if "reactions" not in msg:
+                        msg["reactions"] = await self.get_reactions_redis(msg["id"])
                     redis_newer.append(msg)
             except:
                 continue
@@ -653,9 +683,16 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
         # Sort by timestamp, oldest first
         history.sort(key=lambda m: m["timestamp"])
+
+        # Debug: Print how many messages have reactions
+        messages_with_reactions = sum(1 for msg in history if msg.get("reactions"))
+        print(
+            f"📊 History: {len(history)} messages, {messages_with_reactions} with reactions"
+        )
+
         return history[:limit]
 
-    # ------------------------------------------------------------------ #
+    # Update channel-layer receivers:
     # View-once media
     # ------------------------------------------------------------------ #
     async def mark_view_once_media(self, media_id):
@@ -683,6 +720,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
     # ------------------------------------------------------------------ #
     # Channel-layer receivers
     # ------------------------------------------------------------------ #
+    # In chat/consumers.py - FIX THE INDENTATION
+
     async def chat_message(self, event):
         await self.send(
             text_data=json.dumps(
@@ -695,9 +734,13 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     "media_id": event.get("media_id", ""),
                     "filename": event.get("filename", ""),
                     "is_image": event.get("is_image", False),
+                    "encrypted": event.get("encrypted", False),
+                    "media_type": event.get("media_type", "once"),
                 }
             )
         )
+    # This should be at the same indentation level as other channel-layer receivers
+    # --
 
     async def chat_notification(self, event):
         await self.send(
@@ -717,6 +760,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     "msg_id": event["msg_id"],
                     "message": event["message"],
                     "username": event["username"],
+                    "encrypted": event.get("encrypted", False),  # NEW
                 }
             )
         )
@@ -776,3 +820,74 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     async def disconnect(self, close_code):
         await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
+
+    # In consumers.py - Update get_reactions_redis method
+
+
+async def get_reactions_redis(self, msg_id):
+    """Get reactions for a message from Redis"""
+    # First try to get from the messages list
+    key = f"messages_{self.room_id}"
+    msgs = r.lrange(key, 0, -1)
+
+    for raw in msgs:
+        try:
+            msg = json.loads(raw)
+            if msg.get("id") == msg_id:
+                return msg.get("reactions", {})
+        except:
+            continue
+
+    # If not found in messages list, try a dedicated reactions key
+    reactions_key = f"reactions_{self.room_id}_{msg_id}"
+    reactions_data = r.hgetall(reactions_key)
+
+    if reactions_data:
+        # Convert string values to integers
+        reactions = {}
+        for emoji, count in reactions_data.items():
+            try:
+                reactions[emoji] = int(count)
+            except:
+                reactions[emoji] = 1
+        return reactions
+
+    return {}
+
+    # In consumers.py - Update add_reaction_redis method
+
+
+async def add_reaction_redis(self, msg_id, emoji):
+    """Add a reaction to a message in Redis"""
+    # Use a dedicated key for reactions
+    reactions_key = f"reactions_{self.room_id}_{msg_id}"
+
+    # Increment the reaction count
+    r.hincrby(reactions_key, emoji, 1)
+    r.expire(reactions_key, 7 * 24 * 60 * 60)  # 7 days expiry
+
+    # Also update the message in the messages list
+    key = f"messages_{self.room_id}"
+    msgs = r.lrange(key, 0, -1)
+    updated = False
+
+    for i, raw in enumerate(msgs):
+        try:
+            msg = json.loads(raw)
+            if msg.get("id") == msg_id:
+                reactions = msg.get("reactions", {})
+                reactions[emoji] = reactions.get(emoji, 0) + 1
+                msg["reactions"] = reactions
+                msgs[i] = json.dumps(msg)
+                updated = True
+                break
+        except:
+            continue
+
+    if updated:
+        r.delete(key)
+        for m in reversed(msgs):
+            r.lpush(key, m)
+        r.expire(key, 7 * 24 * 60 * 60)
+
+    return True
